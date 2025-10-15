@@ -1,22 +1,33 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:go_router/go_router.dart';
+import '../../locale/index.dart';
+import '../widgets/lang_btn.dart';
+import '../widgets/theme_dropdown.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      headers: [AppBar(title: const Text('CodeMy App'))],
+      headers: [AppBar(title: Text(l10n.appTitle))],
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome to CodeMy App',
-              style: Theme.of(context).typography.h3,
+            Text(l10n.welcomeMessage, style: Theme.of(context).typography.h3),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const ThemeDropdown(),
+                const SizedBox(width: 12),
+                const LangBtn(),
+              ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
             // Hero section card using Card
             Card(
@@ -26,23 +37,21 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Getting Started',
+                      l10n.gettingStarted,
                       style: Theme.of(context).typography.h4,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Learn programming with interactive lessons and modern tools.',
-                    ),
+                    Text(l10n.gettingStartedDescription),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Button.outline(
-                          child: const Text('Browse Courses'),
+                          child: Text(l10n.browseCourses),
                           onPressed: () {},
                         ),
                         const SizedBox(width: 12),
                         Button.primary(
-                          child: const Text('Start Learning'),
+                          child: Text(l10n.startLearning),
                           onPressed: () {},
                         ),
                       ],
@@ -54,7 +63,7 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            Text('Features', style: Theme.of(context).typography.h4),
+            Text(l10n.features, style: Theme.of(context).typography.h4),
             const SizedBox(height: 16),
 
             GridView.count(
@@ -66,23 +75,23 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.2,
               children: [
                 _buildFeatureCard(
-                  'Interactive Coding',
-                  'Practice coding with real-time feedback and hints.',
+                  l10n.interactiveCoding,
+                  l10n.interactiveCodingDescription,
                   Icons.code,
                 ),
                 _buildFeatureCard(
-                  'Progress Tracking',
-                  'Monitor your learning progress and achievements.',
+                  l10n.progressTracking,
+                  l10n.progressTrackingDescription,
                   Icons.trending_up,
                 ),
                 _buildFeatureCard(
-                  'Community',
-                  'Connect with other learners and get help.',
+                  l10n.community,
+                  l10n.communityDescription,
                   Icons.people,
                 ),
                 _buildFeatureCard(
-                  'Certificates',
-                  'Earn certificates upon course completion.',
+                  l10n.certificates,
+                  l10n.certificatesDescription,
                   Icons.workspace_premium,
                 ),
               ],
@@ -98,29 +107,37 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Quick Actions',
+                      l10n.quickActions,
                       style: Theme.of(context).typography.h4,
                     ),
                     const SizedBox(height: 16),
                     _buildQuickAction(
                       context,
-                      'Continue Last Lesson',
-                      'Pick up where you left off',
+                      l10n.continueLastLesson,
+                      l10n.continueLastLessonDescription,
                       Icons.play_arrow,
                     ),
                     const SizedBox(height: 12),
                     _buildQuickAction(
                       context,
-                      'View Profile',
-                      'Check your learning statistics',
+                      l10n.viewProfile,
+                      l10n.viewProfileDescription,
                       Icons.person,
                     ),
                     const SizedBox(height: 12),
                     _buildQuickAction(
                       context,
-                      'Browse Library',
-                      'Explore our course library',
+                      l10n.browseLibrary,
+                      l10n.browseLibraryDescription,
                       Icons.library_books,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildQuickAction(
+                      context,
+                      'Login', // TODO: Add to l10n
+                      'Navigate to login screen for testing',
+                      Icons.login,
+                      onPressed: () => context.go('/login'),
                     ),
                   ],
                 ),
@@ -162,10 +179,11 @@ class HomeScreen extends StatelessWidget {
     BuildContext context,
     String title,
     String subtitle,
-    IconData icon,
-  ) {
+    IconData icon, {
+    VoidCallback? onPressed,
+  }) {
     return Button.outline(
-      onPressed: () {},
+      onPressed: onPressed ?? () {},
       child: Row(
         children: [
           Icon(icon, size: 24),
