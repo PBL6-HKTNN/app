@@ -111,7 +111,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           children: [
             const Expanded(child: Divider()),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 0),
               child: Text(
                 'or',
                 style: TextStyle(
@@ -145,7 +145,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(l10n.dontHaveAccount),
+            Text(l10n.dontHaveAccount, style: TextStyle(fontSize: 17)),
             const SizedBox(width: 8),
             Button.ghost(
               onPressed: () => context.go('/register'),

@@ -148,7 +148,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(l10n.alreadyHaveAccount),
+            Text(l10n.alreadyHaveAccount, style: TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
             Button.ghost(
               onPressed: () => context.go('/login'),

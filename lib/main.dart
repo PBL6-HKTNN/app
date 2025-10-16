@@ -8,10 +8,12 @@ import 'src/presentation/providers/locale_provider.dart';
 import 'src/presentation/providers/theme_provider.dart';
 import 'src/core/guards/auth_guard.dart';
 import 'src/core/conf/app_config.dart';
+import 'src/features/user/services/google_auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.load();
+  await GoogleAuthService.initialize();
   runApp(const ProviderScope(child: MyApp()));
 }
 

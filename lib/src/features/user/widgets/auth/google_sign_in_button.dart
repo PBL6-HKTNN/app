@@ -1,8 +1,13 @@
 import 'package:codemy_app/l10n/app_localizations.dart';
 import 'package:codemy_app/src/features/user/services/google_auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:async';
+import 'package:flutter/scheduler.dart';
+import '../../models/dto/auth/google_oauth.dart';
 
 class GoogleSignInButton extends ConsumerStatefulWidget {
   final String? text;
@@ -26,38 +31,60 @@ class GoogleSignInButton extends ConsumerStatefulWidget {
 
 class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
   bool _isLoading = false;
+  late StreamSubscription<GoogleSignInAuthenticationEvent> _authSubscription;
 
-  Future<void> _handleGoogleSignIn() async {
-    if (_isLoading) return;
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = GoogleAuthService.googleSignIn.authenticationEvents
+        .listen(_handleAuthEvent, onError: _handleAuthError);
+  }
 
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
+  }
 
-    widget.onSignInStart?.call();
-
-    try {
-      final googleOAuthData = await GoogleAuthService.signInWithGoogle();
-
-      if (googleOAuthData != null) {
-        // Navigate to OAuth screen with the retrieved data
-        if (mounted) {
-          context.go('/oauth', extra: googleOAuthData);
-          widget.onSignInComplete?.call();
-        }
-      } else {
-        // User cancelled sign-in
-        widget.onError?.call('Sign-in was cancelled');
-      }
-    } catch (error) {
-      widget.onError?.call('Sign-in failed: $error');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+  void _handleAuthEvent(GoogleSignInAuthenticationEvent event) {
+    final user = switch (event) {
+      GoogleSignInAuthenticationEventSignIn() => event.user,
+      GoogleSignInAuthenticationEventSignOut() => null,
+    };
+    if (user != null && mounted) {
+      setState(() => _isLoading = true);
+      _getDtoAndNavigate(user);
     }
+  }
+
+  void _handleAuthError(Object error) {
+    setState(() {
+      _isLoading = false;
+    });
+    widget.onError?.call(error.toString());
+  }
+
+  Future<void> _getDtoAndNavigate(GoogleSignInAccount user) async {
+    final scopes = ['email', 'profile'];
+    final headers = await user.authorizationClient.authorizationHeaders(scopes);
+    final accessToken = headers?['Authorization']?.substring(7) ?? '';
+    final serverAuth = await user.authorizationClient.authorizeServer(scopes);
+    final serverAuthCode = serverAuth?.serverAuthCode ?? '';
+    final dto = GoogleOAuthDto(
+      idToken: '',
+      accessToken: accessToken,
+      serverAuthCode: serverAuthCode,
+      email: user.email,
+      displayName: user.displayName ?? '',
+      photoUrl: user.photoUrl,
+    );
+    setState(() {
+      _isLoading = false;
+    });
+    if (mounted) {
+      context.go('/oauth', extra: dto);
+    }
+    widget.onSignInComplete?.call();
   }
 
   @override
@@ -67,7 +94,9 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
     final theme = Theme.of(context);
 
     return Button.outline(
-      onPressed: isLoading ? null : _handleGoogleSignIn,
+      onPressed: isLoading
+          ? null
+          : () => GoogleAuthService.googleSignIn.authenticate(),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -84,14 +113,9 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
             Container(
               width: 20,
               height: 20,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4285F4), // Google Blue
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                LucideIcons.user,
-                size: 12,
-                color: Color(0xFFFFFFFF),
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: const Center(
+                child: FaIcon(FontAwesomeIcons.google, size: 16),
               ),
             ),
           const SizedBox(width: 12),

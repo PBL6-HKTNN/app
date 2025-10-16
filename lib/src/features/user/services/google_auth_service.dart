@@ -4,31 +4,53 @@ import 'package:codemy_app/src/features/user/models/dto/auth/google_oauth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthService {
-  static GoogleSignIn get _googleSignIn => GoogleSignIn(
-    clientId: AppConfig.instance.googleClientId.isNotEmpty
-        ? AppConfig.instance.googleClientId
-        : null,
-    scopes: ['email', 'profile'],
-  );
+  static GoogleSignIn? _googleSignIn;
+
+  static GoogleSignIn get googleSignIn => _googleSignIn!;
+
+  static Future<void> initialize() async {
+    _googleSignIn ??= GoogleSignIn.instance;
+    await _googleSignIn!.initialize(
+      clientId: AppConfig.instance.googleClientId,
+      serverClientId: AppConfig.instance.googleServerClientId,
+    );
+    Logger.log(
+      'GoogleAuthService initialized ${AppConfig.instance.googleClientId}, ${AppConfig.instance.googleServerClientId}',
+      tag: 'GOOGLE_AUTH',
+    );
+  }
+
+  /// Stream of authentication state changes
+  static Stream<GoogleSignInAccount?> get authStateChanges {
+    return googleSignIn.authenticationEvents.map((event) {
+      return switch (event) {
+        GoogleSignInAuthenticationEventSignIn() => event.user,
+        GoogleSignInAuthenticationEventSignOut() => null,
+      };
+    });
+  }
 
   /// Sign in with Google and return OAuth data
   static Future<GoogleOAuthDto?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      if (googleUser == null) {
-        // User cancelled the sign-in
-        return null;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final scopes = <String>['email', 'profile', 'openid'];
+      final headers = await googleUser.authorizationClient.authorizationHeaders(
+        scopes,
+      );
+      final accessToken = headers?['Authorization']?.substring(7) ?? '';
+      final serverAuth = await googleUser.authorizationClient.authorizeServer(
+        scopes,
+      );
+      print(serverAuth);
+      final serverAuthCode = serverAuth?.serverAuthCode ?? '';
 
       // Create DTO with Google OAuth data
       return GoogleOAuthDto(
-        idToken: googleAuth.idToken ?? '',
-        accessToken: googleAuth.accessToken ?? '',
-        serverAuthCode: googleUser.serverAuthCode ?? '',
+        idToken: '',
+        accessToken: accessToken,
+        serverAuthCode: serverAuthCode,
         email: googleUser.email,
         displayName: googleUser.displayName ?? '',
         photoUrl: googleUser.photoUrl,
@@ -42,7 +64,7 @@ class GoogleAuthService {
   /// Sign out from Google
   static Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      await googleSignIn.signOut();
     } catch (error) {
       Logger.error('Google Sign-Out error: $error');
     }
@@ -50,9 +72,6 @@ class GoogleAuthService {
 
   /// Check if user is already signed in
   static Future<bool> isSignedIn() async {
-    return await _googleSignIn.isSignedIn();
+    return false; // TODO: implement with stream
   }
-
-  /// Get current user if signed in
-  static GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
 }
