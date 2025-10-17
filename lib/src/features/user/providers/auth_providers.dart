@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/core/utils/persistence.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/login.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/oauth.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/register.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/verify.dart';
+import 'package:codemy_app/src/features/user/models/entity/user.dart';
 import 'package:codemy_app/src/features/user/services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,26 +21,30 @@ final authStateProvider = NotifierProvider<AuthStateNotifier, AuthState>(() {
 class AuthState {
   final bool isLoading;
   final String? error;
-  final Map<String, dynamic>? user;
+  final User? user;
+  final String? token;
   final bool isAuthenticated;
 
   const AuthState({
     this.isLoading = false,
     this.error,
     this.user,
+    this.token,
     this.isAuthenticated = false,
   });
 
   AuthState copyWith({
     bool? isLoading,
     String? error,
-    Map<String, dynamic>? user,
+    User? user,
+    String? token,
     bool? isAuthenticated,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
       user: user ?? this.user,
+      token: token ?? this.token,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     );
   }
@@ -57,11 +63,23 @@ class AuthStateNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final response = await _authService.login(loginDto);
-      state = state.copyWith(
-        isLoading: false,
-        user: response,
-        isAuthenticated: true,
-      );
+      if (response.isSuccess && response.data != null) {
+        await saveAuthState(
+          response.data!.token,
+          response.data!.user!.toJson(),
+        );
+        state = state.copyWith(
+          isLoading: false,
+          user: response.data!.user,
+          token: response.data!.token,
+          isAuthenticated: true,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString(),
+        );
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -81,8 +99,24 @@ class AuthStateNotifier extends Notifier<AuthState> {
   Future<void> verifyEmail(VerifyDto verifyDto) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _authService.verifyEmail(verifyDto);
-      state = state.copyWith(isLoading: false);
+      final response = await _authService.verifyEmail(verifyDto);
+      if (response.isSuccess && response.data != null) {
+        await saveAuthState(
+          response.data!.token,
+          response.data!.user!.toJson(),
+        );
+        state = state.copyWith(
+          isLoading: false,
+          user: response.data!.user,
+          token: response.data!.token,
+          isAuthenticated: response.data!.user!.emailVerified,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString(),
+        );
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -92,11 +126,23 @@ class AuthStateNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final response = await _authService.oauthLogin(oauthDto);
-      state = state.copyWith(
-        isLoading: false,
-        user: response,
-        isAuthenticated: true,
-      );
+      if (response.isSuccess && response.data != null) {
+        await saveAuthState(
+          response.data!.token,
+          response.data!.user!.toJson(),
+        );
+        state = state.copyWith(
+          isLoading: false,
+          user: response.data!.user,
+          token: response.data!.token,
+          isAuthenticated: true,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString(),
+        );
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -106,6 +152,7 @@ class AuthStateNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _authService.logout();
+      await clearAuthState();
       state = const AuthState();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -122,7 +169,9 @@ class AuthStateNotifier extends Notifier<AuthState> {
       final userData = await PersistenceUtils.readSecureString('user_data');
 
       if (token != null && userData != null) {
-        state = state.copyWith(isAuthenticated: true, user: {'token': token});
+        final userJson = jsonDecode(userData) as Map<String, dynamic>;
+        final user = User.fromJson(userJson);
+        state = state.copyWith(isAuthenticated: true, user: user, token: token);
       }
     } catch (e) {
       Logger.error('Error initializing auth state: $e');
@@ -140,7 +189,7 @@ class AuthStateNotifier extends Notifier<AuthState> {
     Map<String, dynamic> userData,
   ) async {
     await PersistenceUtils.writeSecureString('auth_token', token);
-    await PersistenceUtils.writeSecureString('user_data', userData.toString());
+    await PersistenceUtils.writeSecureString('user_data', jsonEncode(userData));
   }
 
   /// Clear auth state from persistent storage

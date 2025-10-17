@@ -17,6 +17,12 @@ class AuthRoutes {
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(path: oauth, builder: (context, state) => const OAuthScreen()),
-    GoRoute(path: verify, builder: (context, state) => const VerifyScreen()),
+    GoRoute(
+      path: verify,
+      builder: (context, state) {
+        final email = state.uri.queryParameters['email'];
+        return VerifyScreen(email: email);
+      },
+    ),
   ];
 }

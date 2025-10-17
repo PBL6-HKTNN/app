@@ -43,12 +43,15 @@ class GoogleAuthService {
       final serverAuth = await googleUser.authorizationClient.authorizeServer(
         scopes,
       );
-      print(serverAuth);
       final serverAuthCode = serverAuth?.serverAuthCode ?? '';
+      Logger.info(
+        'Google Sign-In successful: ${googleUser.email}, idToken: ${googleUser.authentication.idToken}',
+        tag: 'GOOGLE_AUTH',
+      );
 
       // Create DTO with Google OAuth data
       return GoogleOAuthDto(
-        idToken: '',
+        idToken: googleUser.authentication.idToken ?? '',
         accessToken: accessToken,
         serverAuthCode: serverAuthCode,
         email: googleUser.email,

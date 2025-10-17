@@ -1,18 +1,18 @@
 class OAuthDto {
-  final String idToken;
+  final String token; // idToken
 
-  OAuthDto({required this.idToken});
+  OAuthDto({required this.token});
 
   factory OAuthDto.fromJson(Map<String, dynamic> json) {
-    return OAuthDto(idToken: json['idToken'] as String);
+    return OAuthDto(token: json['token'] as String);
   }
 
   Map<String, dynamic> toJson() {
-    return {'idToken': idToken};
+    return {'token': token};
   }
 
   @override
   String toString() {
-    return 'OAuthDto(idToken: $idToken)';
+    return 'OAuthDto(token: $token)';
   }
 }

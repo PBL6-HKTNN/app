@@ -1,36 +1,22 @@
 class RegisterDto {
-  final String name;
   final String email;
   final String password;
-  final String confirmPassword;
 
-  RegisterDto({
-    required this.name,
-    required this.email,
-    required this.password,
-    required this.confirmPassword,
-  });
+  RegisterDto({required this.email, required this.password});
 
   factory RegisterDto.fromJson(Map<String, dynamic> json) {
     return RegisterDto(
-      name: json['name'] as String,
       email: json['email'] as String,
       password: json['password'] as String,
-      confirmPassword: json['confirmPassword'] as String,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'email': email,
-      'password': password,
-      'confirmPassword': confirmPassword,
-    };
+    return {'email': email, 'password': password};
   }
 
   @override
   String toString() {
-    return 'RegisterDto(name: $name, email: $email, password: $password, confirmPassword: $confirmPassword)';
+    return 'RegisterDto(email: $email, password: $password)';
   }
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart' hide Scaffold, Card, Theme;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 class ModalLayout extends StatelessWidget {

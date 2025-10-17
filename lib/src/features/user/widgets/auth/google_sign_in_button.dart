@@ -1,4 +1,5 @@
 import 'package:codemy_app/l10n/app_localizations.dart';
+import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/features/user/services/google_auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -6,7 +7,6 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:async';
-import 'package:flutter/scheduler.dart';
 import '../../models/dto/auth/google_oauth.dart';
 
 class GoogleSignInButton extends ConsumerStatefulWidget {
@@ -71,7 +71,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
     final serverAuth = await user.authorizationClient.authorizeServer(scopes);
     final serverAuthCode = serverAuth?.serverAuthCode ?? '';
     final dto = GoogleOAuthDto(
-      idToken: '',
+      idToken: user.authentication.idToken ?? '',
       accessToken: accessToken,
       serverAuthCode: serverAuthCode,
       email: user.email,
@@ -82,6 +82,10 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
       _isLoading = false;
     });
     if (mounted) {
+      Logger.log(
+        'Navigating to OAuthScreen with DTO: ${dto.idToken}',
+        tag: 'GOOGLE_SIGN_IN',
+      );
       context.go('/oauth', extra: dto);
     }
     widget.onSignInComplete?.call();

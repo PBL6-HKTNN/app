@@ -1,9 +1,11 @@
+import 'package:codemy_app/src/core/validators/index.dart';
+import 'package:codemy_app/src/features/user/models/dto/auth/login.dart';
+import 'package:codemy_app/src/features/user/providers/auth_providers.dart';
+import 'package:codemy_app/src/locale/index.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/auth_providers.dart';
-import '../../models/dto/auth/login.dart';
-import '../../../../locale/index.dart';
+
 import 'google_sign_in_button.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
@@ -17,6 +19,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void dispose() {
@@ -26,9 +30,15 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   }
 
   void _handleLogin() async {
-    // Basic validation
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
+    final emailError = validateEmail(_emailController.text);
+    final passwordError = validateLength(_passwordController.text, min: 1);
+
+    setState(() {
+      _emailError = emailError;
+      _passwordError = passwordError;
+    });
+
+    if (emailError != null || passwordError != null) {
       return;
     }
 
@@ -80,6 +90,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           keyboardType: TextInputType.emailAddress,
           features: [InputFeature.leading(const Icon(Icons.email_outlined))],
         ),
+        if (_emailError != null)
+          Text(
+            _emailError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.destructive),
+          ),
         const SizedBox(height: 16),
         TextField(
           controller: _passwordController,
@@ -98,6 +113,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             ),
           ],
         ),
+        if (_passwordError != null)
+          Text(
+            _passwordError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.destructive),
+          ),
         const SizedBox(height: 24),
         Button.primary(
           onPressed: authState.isLoading ? null : _handleLogin,

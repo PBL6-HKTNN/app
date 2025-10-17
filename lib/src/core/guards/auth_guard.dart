@@ -21,6 +21,10 @@ String? authGuardRedirect(BuildContext context, GoRouterState state) {
     return '/login';
   }
 
+  if (!authState.user!.emailVerified) {
+    return '/verify';
+  }
+
   // User is authenticated, allow access
   return null;
 }

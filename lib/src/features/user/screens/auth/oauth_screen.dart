@@ -19,28 +19,6 @@ class OAuthScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (googleData != null) ...[
-            // Display user information
-            _buildDataCard('User Information', [
-              _buildDataRow('Email', googleData.email),
-              _buildDataRow('Display Name', googleData.displayName),
-              _buildDataRow('Photo URL', googleData.photoUrl ?? 'Not provided'),
-            ]),
-            const SizedBox(height: 16),
-
-            // Display OAuth tokens (for development purposes)
-            _buildDataCard('OAuth Tokens', [
-              _buildDataRow('ID Token', _truncateToken(googleData.idToken)),
-              _buildDataRow(
-                'Access Token',
-                _truncateToken(googleData.accessToken),
-              ),
-              _buildDataRow(
-                'Server Auth Code',
-                googleData.serverAuthCode ?? 'Not provided',
-              ),
-            ]),
-            const SizedBox(height: 24),
-
             // Profile picture if available
             if (googleData.photoUrl != null)
               Center(
@@ -62,6 +40,24 @@ class OAuthScreen extends StatelessWidget {
                       : null,
                 ),
               ),
+            const SizedBox(height: 24),
+            // Display user information
+            _buildDataCard('User Information', [
+              _buildDataRow('Email', googleData.email),
+              _buildDataRow('Display Name', googleData.displayName),
+              _buildDataRow('Photo URL', googleData.photoUrl ?? 'Not provided'),
+            ]),
+            const SizedBox(height: 16),
+
+            // Display OAuth tokens (for development purposes)
+            _buildDataCard('OAuth Tokens', [
+              _buildDataRow('ID Token', _truncateToken(googleData.idToken)),
+              _buildDataRow('Access Token', googleData.accessToken),
+              _buildDataRow(
+                'Server Auth Code',
+                googleData.serverAuthCode ?? 'Not provided',
+              ),
+            ]),
             const SizedBox(height: 24),
           ] else ...[
             Text(

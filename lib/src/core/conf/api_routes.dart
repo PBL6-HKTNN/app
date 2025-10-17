@@ -5,9 +5,10 @@ class ApiRoutes {
   static String get baseUrl => AppConfig.instance.baseUrl;
 
   // Auth routes
-  static String get login => '$baseUrl/auth/login';
-  static String get register => '$baseUrl/auth/register';
-  static String get verify => '$baseUrl/auth/verify';
-  static String get oauth => '$baseUrl/auth/oauth';
-  static String get logout => '$baseUrl/auth/logout';
+  static String get login => '$baseUrl/Auth/login';
+  static String get register => '$baseUrl/Auth/register';
+  static String get verify => '$baseUrl/Auth/verify-email';
+  static String get oauth => '$baseUrl/Auth/google-login';
+  static String get reset_password => '$baseUrl/Auth/reset-password';
+  static String get logout => '$baseUrl/Auth/logout';
 }
