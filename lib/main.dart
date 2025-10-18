@@ -59,8 +59,14 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return ShadcnApp.router(
       title: 'CodeMy App',
-      theme: ThemeData(colorScheme: ColorSchemes.lightBlue, radius: 0.5),
-      darkTheme: ThemeData(colorScheme: ColorSchemes.darkBlue, radius: 0.5),
+      theme: ThemeData(
+        colorScheme: ColorSchemes.lightDefaultColor,
+        radius: 0.5,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorSchemes.darkDefaultColor,
+        radius: 0.5,
+      ),
       themeMode: appThemeMode,
       locale: locale,
       routerConfig: appRouter,

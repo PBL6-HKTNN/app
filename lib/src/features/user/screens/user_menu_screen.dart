@@ -14,7 +14,6 @@ class UserMenuScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
     final authNotifier = ref.read(authStateProvider.notifier);
-    final currentTheme = ref.watch(themeModeProvider);
 
     if (!authState.isAuthenticated || authState.user == null) {
       return MainNavigationBar(
