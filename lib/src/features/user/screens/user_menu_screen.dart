@@ -1,3 +1,5 @@
+import 'package:codemy_app/src/presentation/widgets/lang_btn.dart';
+import 'package:codemy_app/src/presentation/widgets/theme_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -36,7 +38,7 @@ class UserMenuScreen extends ConsumerWidget {
 
     return MainNavigationBar(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -157,40 +159,25 @@ class UserMenuScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(_getThemeIcon(currentTheme), size: 20),
+                            Icon(BootstrapIcons.lightbulbFill, size: 20),
                             const SizedBox(width: 12),
                             const Text('Theme'),
                           ],
                         ),
-                        Select<ShadcnThemeMode>(
-                          value: currentTheme,
-                          onChanged: (ShadcnThemeMode? newTheme) {
-                            if (newTheme != null) {
-                              ref
-                                  .read(themeModeProvider.notifier)
-                                  .setThemeMode(newTheme);
-                            }
-                          },
-                          placeholder: const Text('Select Theme'),
-                          popup: SelectPopup(
-                            items: SelectItemList(
-                              children: ShadcnThemeMode.values.map((themeMode) {
-                                return SelectItem(
-                                  value: themeMode,
-                                  builder: (context) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    child: Text(themeMode.displayName),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ).call,
-                          itemBuilder: (context, value) =>
-                              Text(value.displayName),
+                        const ThemeDropdown(),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(LucideIcons.languages, size: 20),
+                            const SizedBox(width: 12),
+                            const Text('Language'),
+                          ],
                         ),
+                        const LangBtn(),
                       ],
                     ),
                   ],

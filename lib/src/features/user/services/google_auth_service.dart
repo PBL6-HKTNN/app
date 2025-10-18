@@ -2,6 +2,7 @@ import 'package:codemy_app/src/core/conf/app_config.dart';
 import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/google_oauth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 class GoogleAuthService {
   static GoogleSignIn? _googleSignIn;
@@ -10,10 +11,16 @@ class GoogleAuthService {
 
   static Future<void> initialize() async {
     _googleSignIn ??= GoogleSignIn.instance;
-    await _googleSignIn!.initialize(
-      clientId: AppConfig.instance.googleClientId,
-      serverClientId: AppConfig.instance.googleServerClientId,
-    );
+    if (kIsWeb) {
+      await _googleSignIn!.initialize(
+        clientId: AppConfig.instance.googleClientId,
+        serverClientId: AppConfig.instance.googleServerClientId,
+      );
+    } else {
+      await _googleSignIn!.initialize(
+        serverClientId: AppConfig.instance.googleServerClientId,
+      );
+    }
     Logger.log(
       'GoogleAuthService initialized ${AppConfig.instance.googleClientId}, ${AppConfig.instance.googleServerClientId}',
       tag: 'GOOGLE_AUTH',

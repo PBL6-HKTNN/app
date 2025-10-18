@@ -10,7 +10,7 @@ class LangBtn extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     return Button.outline(
       onPressed: () => ref.read(localeProvider.notifier).toggleLocale(),
-      child: Text('Language: ${locale.languageCode.toUpperCase()}'),
+      child: Text(locale.languageCode.toUpperCase()),
     );
   }
 }

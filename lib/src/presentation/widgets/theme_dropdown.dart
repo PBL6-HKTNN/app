@@ -20,9 +20,9 @@ class ThemeDropdown extends ConsumerWidget {
       popup: SelectPopup(
         items: SelectItemList(
           children: ShadcnThemeMode.values.map((themeMode) {
-            return SelectItem(
+            return SelectItemButton(
               value: themeMode,
-              builder: (context) => Padding(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
