@@ -65,7 +65,10 @@ class UserMenuScreen extends ConsumerWidget {
                     Row(
                       children: [
                         if (user.profilePicture.isNotEmpty)
-                          Avatar(initials: user.name[0].toUpperCase(), size: 64)
+                          Avatar(
+                            initials: user.name[0].toUpperCase(),
+                            provider: NetworkImage(user.profilePicture),
+                          )
                         else
                           Avatar(
                             initials: user.name[0].toUpperCase(),

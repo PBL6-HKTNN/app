@@ -1,5 +1,6 @@
 import 'package:codemy_app/l10n/app_localizations.dart';
 import 'package:codemy_app/src/core/utils/logger.dart';
+import 'dart:developer';
 import 'package:codemy_app/src/features/user/services/google_auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -82,10 +83,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
       _isLoading = false;
     });
     if (mounted) {
-      Logger.log(
-        'Navigating to OAuthScreen with DTO: ${dto.idToken}',
-        tag: 'GOOGLE_SIGN_IN',
-      );
+      log('Navigating to OAuthScreen with DTO: ${dto.idToken}');
       context.go('/oauth', extra: dto);
     }
     widget.onSignInComplete?.call();
