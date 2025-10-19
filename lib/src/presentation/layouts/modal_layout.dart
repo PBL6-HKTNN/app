@@ -1,4 +1,6 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import '../widgets/lang_btn.dart';
+import '../widgets/theme_dropdown.dart';
 
 class ModalLayout extends StatelessWidget {
   final String title;
@@ -24,6 +26,19 @@ class ModalLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Top right controls
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      LangBtn(),
+                      SizedBox(width: 8),
+                      ThemeDropdown(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Center(
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 400),

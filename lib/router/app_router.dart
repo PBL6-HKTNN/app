@@ -6,6 +6,7 @@ import 'package:codemy_app/src/features/user/routes/user_routes.dart';
 import 'package:codemy_app/src/core/guards/auth_guard.dart';
 
 final appRouter = GoRouter(
+  initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     ...AuthRoutes.routes,

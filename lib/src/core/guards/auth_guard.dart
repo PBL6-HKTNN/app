@@ -7,7 +7,13 @@ import '../../features/user/providers/auth_providers.dart';
 /// Checks authentication status and redirects to login if not authenticated
 String? authGuardRedirect(BuildContext context, GoRouterState state) {
   // Skip auth check for auth routes
-  final authRoutes = ['/login', '/register', '/oauth', '/verify'];
+  final authRoutes = [
+    '/login',
+    '/register',
+    '/oauth',
+    '/verify',
+    '/reset-password',
+  ];
   if (authRoutes.contains(state.matchedLocation)) {
     return null;
   }
@@ -19,10 +25,6 @@ String? authGuardRedirect(BuildContext context, GoRouterState state) {
   // If not authenticated, redirect to login
   if (!authState.isAuthenticated) {
     return '/login';
-  }
-
-  if (!authState.user!.emailVerified) {
-    return '/verify';
   }
 
   // User is authenticated, allow access

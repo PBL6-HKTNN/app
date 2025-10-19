@@ -1,5 +1,5 @@
 class ApiRes<T> {
-  final String status;
+  final int status;
   final T? data;
   final dynamic error;
   final bool isSuccess;
@@ -16,7 +16,7 @@ class ApiRes<T> {
     T Function(dynamic)? fromJsonT,
   ) {
     return ApiRes<T>(
-      status: json['status'].toString(),
+      status: json['status'] as int,
       data: json['data'] != null && fromJsonT != null
           ? fromJsonT(json['data'])
           : null,

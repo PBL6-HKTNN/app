@@ -5,6 +5,7 @@ import 'package:codemy_app/src/features/user/models/dto/auth/login.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/oauth.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/register.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/verify.dart';
+import 'package:codemy_app/src/features/user/models/dto/auth/reset_password.dart';
 import 'package:codemy_app/src/features/user/models/entity/user.dart';
 import 'package:codemy_app/src/features/user/services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,13 +25,14 @@ class AuthState {
   final User? user;
   final String? token;
   final bool isAuthenticated;
-
-  const AuthState({
+  final bool requiresEmailVerification;
+  AuthState({
     this.isLoading = false,
     this.error,
     this.user,
     this.token,
     this.isAuthenticated = false,
+    this.requiresEmailVerification = false,
   });
 
   AuthState copyWith({
@@ -39,6 +41,7 @@ class AuthState {
     User? user,
     String? token,
     bool? isAuthenticated,
+    bool? requiresEmailVerification,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -46,6 +49,8 @@ class AuthState {
       user: user ?? this.user,
       token: token ?? this.token,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      requiresEmailVerification:
+          requiresEmailVerification ?? this.requiresEmailVerification,
     );
   }
 }
@@ -54,7 +59,7 @@ class AuthState {
 class AuthStateNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    return const AuthState();
+    return AuthState();
   }
 
   AuthService get _authService => ref.read(authServiceProvider);
@@ -64,20 +69,42 @@ class AuthStateNotifier extends Notifier<AuthState> {
     try {
       final response = await _authService.login(loginDto);
       if (response.isSuccess && response.data != null) {
-        await saveAuthState(
-          response.data!.token,
-          response.data!.user!.toJson(),
-        );
-        state = state.copyWith(
-          isLoading: false,
-          user: response.data!.user,
-          token: response.data!.token,
-          isAuthenticated: true,
-        );
+        if (response.status != 200) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'Login failed with status: ${response.status}',
+          );
+          return;
+        }
+        if (response.data!.requiresEmailVerification == true) {
+          // Handle email verification required case
+          state = state.copyWith(
+            isLoading: false,
+            requiresEmailVerification: true,
+          );
+        } else if (response.data!.token != null &&
+            response.data!.user != null) {
+          await saveAuthState(
+            response.data!.token!,
+            response.data!.user!.toJson(),
+          );
+          state = state.copyWith(
+            isLoading: false,
+            user: response.data!.user,
+            token: response.data!.token,
+            isAuthenticated: true,
+            requiresEmailVerification: false,
+          );
+        } else {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'Invalid response from server',
+          );
+        }
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: response.error?.toString(),
+          error: response.error?.toString() ?? 'Login failed',
         );
       }
     } catch (e) {
@@ -88,7 +115,14 @@ class AuthStateNotifier extends Notifier<AuthState> {
   Future<void> register(RegisterDto registerDto) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _authService.register(registerDto);
+      final response = await _authService.register(registerDto);
+      if (!response.isSuccess) {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString() ?? 'Registration failed',
+        );
+        return;
+      }
       state = state.copyWith(isLoading: false);
       // Don't set authenticated here, user needs to verify email first
     } catch (e) {
@@ -100,9 +134,12 @@ class AuthStateNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final response = await _authService.verifyEmail(verifyDto);
-      if (response.isSuccess && response.data != null) {
+      if (response.isSuccess &&
+          response.data != null &&
+          response.data!.token != null &&
+          response.data!.user != null) {
         await saveAuthState(
-          response.data!.token,
+          response.data!.token!,
           response.data!.user!.toJson(),
         );
         state = state.copyWith(
@@ -110,11 +147,12 @@ class AuthStateNotifier extends Notifier<AuthState> {
           user: response.data!.user,
           token: response.data!.token,
           isAuthenticated: response.data!.user!.emailVerified,
+          requiresEmailVerification: false,
         );
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: response.error?.toString(),
+          error: response.error?.toString() ?? 'Email verification failed',
         );
       }
     } catch (e) {
@@ -126,9 +164,12 @@ class AuthStateNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final response = await _authService.oauthLogin(oauthDto);
-      if (response.isSuccess && response.data != null) {
+      if (response.isSuccess &&
+          response.data != null &&
+          response.data!.token != null &&
+          response.data!.user != null) {
         await saveAuthState(
-          response.data!.token,
+          response.data!.token!,
           response.data!.user!.toJson(),
         );
         state = state.copyWith(
@@ -136,11 +177,12 @@ class AuthStateNotifier extends Notifier<AuthState> {
           user: response.data!.user,
           token: response.data!.token,
           isAuthenticated: true,
+          requiresEmailVerification: false,
         );
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: response.error?.toString(),
+          error: response.error?.toString() ?? 'OAuth login failed',
         );
       }
     } catch (e) {
@@ -153,7 +195,41 @@ class AuthStateNotifier extends Notifier<AuthState> {
     try {
       await _authService.logout();
       await clearAuthState();
-      state = const AuthState();
+      state = AuthState();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> getResetPasswordToken(String email) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _authService.getResetPasswordToken(email);
+      if (response.isSuccess) {
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString() ?? 'Failed to send reset code',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> resetPassword(ResetPasswordDto resetPasswordDto) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _authService.resetPassword(resetPasswordDto);
+      if (response.isSuccess) {
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error?.toString() ?? 'Password reset failed',
+        );
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

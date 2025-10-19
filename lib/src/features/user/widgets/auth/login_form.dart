@@ -50,6 +50,16 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     await ref.read(authStateProvider.notifier).login(loginDto);
 
     final authState = ref.read(authStateProvider);
+    if (!authState.isLoading &&
+        authState.requiresEmailVerification == true &&
+        mounted) {
+      context.go(
+        Uri(
+          path: '/verify',
+          queryParameters: {'email': loginDto.email},
+        ).toString(),
+      );
+    }
     if (authState.isAuthenticated && mounted) {
       context.go('/');
     }
@@ -160,6 +170,16 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               ),
             );
           },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Button.ghost(
+              onPressed: () => context.go('/reset-password'),
+              child: Text(l10n.forgotPassword),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Row(

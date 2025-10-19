@@ -1,14 +1,21 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../locale/index.dart';
 import '../layouts/main_navigation_bar.dart';
+import '../../features/user/providers/auth_providers.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final authState = ref.watch(authStateProvider);
+
+    final welcomeText = authState.isAuthenticated && authState.user != null
+        ? l10n.helloUser(authState.user!.name)
+        : l10n.welcomeMessage;
     return MainNavigationBar(
       child: Scaffold(
         child: SingleChildScrollView(
@@ -16,7 +23,7 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.welcomeMessage, style: Theme.of(context).typography.h3),
+              Text(welcomeText, style: Theme.of(context).typography.h3),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

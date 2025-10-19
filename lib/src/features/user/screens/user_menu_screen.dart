@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../providers/auth_providers.dart';
 import '../../../presentation/providers/theme_provider.dart';
 import '../../../presentation/layouts/main_navigation_bar.dart';
+import '../../../locale/index.dart';
 
 class UserMenuScreen extends ConsumerWidget {
   const UserMenuScreen({super.key});
@@ -14,6 +15,7 @@ class UserMenuScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
     final authNotifier = ref.read(authStateProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
 
     if (!authState.isAuthenticated || authState.user == null) {
       return MainNavigationBar(
@@ -21,11 +23,11 @@ class UserMenuScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Not authenticated'),
+              Text(l10n.notAuthenticated),
               const SizedBox(height: 16),
               Button.primary(
                 onPressed: () => context.go('/login'),
-                child: const Text('Go to Login'),
+                child: Text(l10n.goToLogin),
               ),
             ],
           ),
@@ -45,7 +47,7 @@ class UserMenuScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('User Profile', style: Theme.of(context).typography.h1),
+                Text(l10n.userProfile, style: Theme.of(context).typography.h1),
                 Button.ghost(
                   onPressed: () => context.go('/'),
                   child: const Icon(Icons.close),
@@ -57,7 +59,7 @@ class UserMenuScreen extends ConsumerWidget {
             // User Info Card
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -84,61 +86,14 @@ class UserMenuScreen extends ConsumerWidget {
                                 style: Theme.of(context).typography.h3,
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                user.email,
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.mutedForeground,
-                                ),
+                              PrimaryBadge(
+                                child: Text(_getRoleText(user.role)),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-
-                    // User Details
-                    _buildInfoRow(context, 'Role', _getRoleText(user.role)),
-                    const SizedBox(height: 16),
-                    _buildInfoRow(
-                      context,
-                      'Email Verified',
-                      user.emailVerified ? 'Yes' : 'No',
-                      valueColor: user.emailVerified
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.destructive,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInfoRow(
-                      context,
-                      'Total Courses',
-                      user.totalCourses.toString(),
-                    ),
-                    if (user.rating != null) ...[
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        context,
-                        'Rating',
-                        user.rating!.toStringAsFixed(1),
-                      ),
-                    ],
-                    if (user.bio != null && user.bio!.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 24),
-                      Text('Bio', style: Theme.of(context).typography.semiBold),
-                      const SizedBox(height: 8),
-                      Text(
-                        user.bio!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -152,7 +107,7 @@ class UserMenuScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Settings', style: Theme.of(context).typography.h4),
+                    Text(l10n.settings, style: Theme.of(context).typography.h4),
                     const SizedBox(height: 16),
 
                     // Theme Toggle
@@ -199,20 +154,20 @@ class UserMenuScreen extends ConsumerWidget {
                       }
                     },
               child: authState.isLoading
-                  ? const Row(
+                  ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(width: 8),
-                        Text('Logging out...'),
+                        const CircularProgressIndicator(),
+                        const SizedBox(width: 8),
+                        Text(l10n.loggingOut),
                       ],
                     )
-                  : const Row(
+                  : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout),
-                        SizedBox(width: 8),
-                        Text('Logout'),
+                        const Icon(Icons.logout),
+                        const SizedBox(width: 8),
+                        Text(l10n.logout),
                       ],
                     ),
             ),
@@ -257,17 +212,6 @@ class UserMenuScreen extends ConsumerWidget {
         return 'Student';
       default:
         return 'Unknown';
-    }
-  }
-
-  IconData _getThemeIcon(ShadcnThemeMode themeMode) {
-    switch (themeMode) {
-      case ShadcnThemeMode.light:
-        return Icons.wb_sunny;
-      case ShadcnThemeMode.dark:
-        return Icons.nightlight_round;
-      case ShadcnThemeMode.system:
-        return Icons.settings_brightness;
     }
   }
 }

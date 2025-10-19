@@ -15,6 +15,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeMessage => 'Welcome to CodeMy App';
 
   @override
+  String helloUser(Object name) {
+    return 'Hello, $name!';
+  }
+
+  @override
   String get gettingStarted => 'Getting Started';
 
   @override
@@ -175,4 +180,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidEmail => 'Please enter a valid email address';
+
+  @override
+  String get notAuthenticated => 'Not authenticated';
+
+  @override
+  String get goToLogin => 'Go to Login';
+
+  @override
+  String get userProfile => 'Menu';
+
+  @override
+  String get role => 'Role';
+
+  @override
+  String get bio => 'Bio';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get loggingOut => 'Logging out...';
+
+  @override
+  String get welcomeBackSubtitle => 'Welcome back! Please sign in to your account.';
+
+  @override
+  String get createAccountSubtitle => 'Create your account to get started.';
+
+  @override
+  String get emailVerification => 'Email Verification';
+
+  @override
+  String get emailVerificationSubtitle => 'We sent a verification code to your email. Please enter it below.';
+
+  @override
+  String get signingIn => 'Signing you in...';
+
+  @override
+  String get googleSignInSubtitle => 'Please wait while we complete your Google sign-in.';
+
+  @override
+  String get completingSignIn => 'Completing sign-in...';
+
+  @override
+  String get signInFailed => 'Sign-in failed';
+
+  @override
+  String get signInSuccessful => 'Sign-in successful!';
+
+  @override
+  String get authenticationFailed => 'Authentication Failed';
+
+  @override
+  String get backToLogin => 'Back to Login';
+
+  @override
+  String get signingInProgress => 'Signing in...';
+
+  @override
+  String get sendResetCode => 'Send Reset Code';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get enterNewPassword => 'Enter new password';
+
+  @override
+  String get resetCode => 'Reset Code';
+
+  @override
+  String get resetCodeSent => 'Reset code sent to your email';
+
+  @override
+  String get passwordResetSuccessful => 'Password reset successful';
 }

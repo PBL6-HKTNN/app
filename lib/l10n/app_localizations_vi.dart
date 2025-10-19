@@ -15,6 +15,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get welcomeMessage => 'Chào mừng đến với Ứng dụng CodeMy';
 
   @override
+  String helloUser(Object name) {
+    return 'Xin chào, $name!';
+  }
+
+  @override
   String get gettingStarted => 'Bắt đầu';
 
   @override
@@ -175,4 +180,85 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get invalidEmail => 'Vui lòng nhập địa chỉ email hợp lệ';
+
+  @override
+  String get notAuthenticated => 'Chưa xác thực';
+
+  @override
+  String get goToLogin => 'Đi đến Đăng nhập';
+
+  @override
+  String get userProfile => 'Menu';
+
+  @override
+  String get role => 'Vai trò';
+
+  @override
+  String get bio => 'Tiểu sử';
+
+  @override
+  String get settings => 'Cài đặt';
+
+  @override
+  String get theme => 'Chủ đề';
+
+  @override
+  String get language => 'Ngôn ngữ';
+
+  @override
+  String get loggingOut => 'Đang đăng xuất...';
+
+  @override
+  String get welcomeBackSubtitle => 'Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.';
+
+  @override
+  String get createAccountSubtitle => 'Tạo tài khoản của bạn để bắt đầu.';
+
+  @override
+  String get emailVerification => 'Xác minh Email';
+
+  @override
+  String get emailVerificationSubtitle => 'Chúng tôi đã gửi mã xác minh đến email của bạn. Vui lòng nhập mã đó bên dưới.';
+
+  @override
+  String get signingIn => 'Đang đăng nhập bạn vào...';
+
+  @override
+  String get googleSignInSubtitle => 'Vui lòng đợi trong khi chúng tôi hoàn tất đăng nhập Google của bạn.';
+
+  @override
+  String get completingSignIn => 'Đang hoàn tất đăng nhập...';
+
+  @override
+  String get signInFailed => 'Đăng nhập thất bại';
+
+  @override
+  String get signInSuccessful => 'Đăng nhập thành công!';
+
+  @override
+  String get authenticationFailed => 'Xác thực Thất bại';
+
+  @override
+  String get backToLogin => 'Quay lại Đăng nhập';
+
+  @override
+  String get signingInProgress => 'Đang đăng nhập...';
+
+  @override
+  String get sendResetCode => 'Gửi Mã Đặt Lại';
+
+  @override
+  String get resetPassword => 'Đặt Lại Mật Khẩu';
+
+  @override
+  String get enterNewPassword => 'Nhập mật khẩu mới';
+
+  @override
+  String get resetCode => 'Mã Đặt Lại';
+
+  @override
+  String get resetCodeSent => 'Mã đặt lại đã được gửi đến email của bạn';
+
+  @override
+  String get passwordResetSuccessful => 'Đặt lại mật khẩu thành công';
 }

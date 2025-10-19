@@ -12,7 +12,7 @@ class RegisterScreen extends StatelessWidget {
 
     return ModalLayout(
       title: l10n.register,
-      subtitle: 'Create your account to get started.',
+      subtitle: l10n.createAccountSubtitle,
       padding: const EdgeInsets.all(16.0),
       child: const RegisterForm(),
     );

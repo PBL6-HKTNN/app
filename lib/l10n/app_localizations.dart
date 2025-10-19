@@ -107,6 +107,12 @@ abstract class AppLocalizations {
   /// **'Welcome to CodeMy App'**
   String get welcomeMessage;
 
+  /// No description provided for @helloUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}!'**
+  String helloUser(Object name);
+
   /// No description provided for @gettingStarted.
   ///
   /// In en, this message translates to:
@@ -430,6 +436,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter a valid email address'**
   String get invalidEmail;
+
+  /// No description provided for @notAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not authenticated'**
+  String get notAuthenticated;
+
+  /// No description provided for @goToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Login'**
+  String get goToLogin;
+
+  /// No description provided for @userProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get userProfile;
+
+  /// No description provided for @role.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get role;
+
+  /// No description provided for @bio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get bio;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @loggingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out...'**
+  String get loggingOut;
+
+  /// No description provided for @welcomeBackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back! Please sign in to your account.'**
+  String get welcomeBackSubtitle;
+
+  /// No description provided for @createAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to get started.'**
+  String get createAccountSubtitle;
+
+  /// No description provided for @emailVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Verification'**
+  String get emailVerification;
+
+  /// No description provided for @emailVerificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a verification code to your email. Please enter it below.'**
+  String get emailVerificationSubtitle;
+
+  /// No description provided for @signingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing you in...'**
+  String get signingIn;
+
+  /// No description provided for @googleSignInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait while we complete your Google sign-in.'**
+  String get googleSignInSubtitle;
+
+  /// No description provided for @completingSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Completing sign-in...'**
+  String get completingSignIn;
+
+  /// No description provided for @signInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed'**
+  String get signInFailed;
+
+  /// No description provided for @signInSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in successful!'**
+  String get signInSuccessful;
+
+  /// No description provided for @authenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication Failed'**
+  String get authenticationFailed;
+
+  /// No description provided for @backToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get backToLogin;
+
+  /// No description provided for @signingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in...'**
+  String get signingInProgress;
+
+  /// No description provided for @sendResetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Code'**
+  String get sendResetCode;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPassword;
+
+  /// No description provided for @enterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get enterNewPassword;
+
+  /// No description provided for @resetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Code'**
+  String get resetCode;
+
+  /// No description provided for @resetCodeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset code sent to your email'**
+  String get resetCodeSent;
+
+  /// No description provided for @passwordResetSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successful'**
+  String get passwordResetSuccessful;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -28,7 +28,7 @@ class AuthService {
     } catch (e) {
       Logger.error('Login failed', tag: 'AUTH', error: e);
       return ApiRes<AuthRes>(
-        status: 'error',
+        status: 500,
         data: null,
         error: e,
         isSuccess: false,
@@ -54,7 +54,7 @@ class AuthService {
     } catch (e) {
       Logger.error('Registration failed', tag: 'AUTH', error: e);
       return ApiRes<AuthRes>(
-        status: 'error',
+        status: 500,
         data: null,
         error: e,
         isSuccess: false,
@@ -77,7 +77,7 @@ class AuthService {
     } catch (e) {
       Logger.error('Email verification failed', tag: 'AUTH', error: e);
       return ApiRes<AuthRes>(
-        status: 'error',
+        status: 500,
         data: null,
         error: e,
         isSuccess: false,
@@ -100,7 +100,7 @@ class AuthService {
     } catch (e) {
       Logger.error('OAuth login failed', tag: 'AUTH', error: e);
       return ApiRes<AuthRes>(
-        status: 'error',
+        status: 500,
         data: null,
         error: e,
         isSuccess: false,
@@ -108,22 +108,55 @@ class AuthService {
     }
   }
 
-  Future<ApiRes<void>> resetPassword(ResetPasswordDto resetPasswordDto) async {
+  Future<ApiRes<Map<String, dynamic>>> getResetPasswordToken(
+    String email,
+  ) async {
+    try {
+      Logger.log(
+        'Attempting to get reset password token for: $email',
+        tag: 'AUTH',
+      );
+      final response = await _apiClient.post(
+        ApiRoutes.resetPasswordToken,
+        body: {'email': email},
+      );
+      Logger.log('Get reset password token successful', tag: 'AUTH');
+      return ApiRes<Map<String, dynamic>>.fromJson(
+        response,
+        (d) => d as Map<String, dynamic>,
+      );
+    } catch (e) {
+      Logger.error('Get reset password token failed', tag: 'AUTH', error: e);
+      return ApiRes<Map<String, dynamic>>(
+        status: 500,
+        data: null,
+        error: e,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<Map<String, dynamic>>> resetPassword(
+    ResetPasswordDto resetPasswordDto,
+  ) async {
     try {
       Logger.log(
         'Attempting password reset for: ${resetPasswordDto.email}',
         tag: 'AUTH',
       );
       final response = await _apiClient.post(
-        ApiRoutes.reset_password,
+        ApiRoutes.resetPassword,
         body: resetPasswordDto.toJson(),
       );
       Logger.log('Password reset successful', tag: 'AUTH');
-      return ApiRes<void>.fromJson(response, (_) {});
+      return ApiRes<Map<String, dynamic>>.fromJson(
+        response,
+        (d) => d as Map<String, dynamic>,
+      );
     } catch (e) {
       Logger.error('Password reset failed', tag: 'AUTH', error: e);
-      return ApiRes<void>(
-        status: 'error',
+      return ApiRes<Map<String, dynamic>>(
+        status: 500,
         data: null,
         error: e,
         isSuccess: false,
@@ -139,12 +172,7 @@ class AuthService {
       return ApiRes<void>.fromJson(response, (d) => null);
     } catch (e) {
       Logger.error('Logout failed', tag: 'AUTH', error: e);
-      return ApiRes<void>(
-        status: 'error',
-        data: null,
-        error: e,
-        isSuccess: false,
-      );
+      return ApiRes<void>(status: 500, data: null, error: e, isSuccess: false);
     }
   }
 }

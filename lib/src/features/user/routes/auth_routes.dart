@@ -2,6 +2,7 @@ import 'package:codemy_app/src/features/user/screens/auth/login_screen.dart';
 import 'package:codemy_app/src/features/user/screens/auth/oauth_screen.dart';
 import 'package:codemy_app/src/features/user/screens/auth/register_screen.dart';
 import 'package:codemy_app/src/features/user/screens/auth/verify_screen.dart';
+import 'package:codemy_app/src/features/user/screens/auth/reset_password_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class AuthRoutes {
@@ -9,6 +10,7 @@ class AuthRoutes {
   static const String register = '/register';
   static const String oauth = '/oauth';
   static const String verify = '/verify';
+  static const String resetPassword = '/reset-password';
 
   static List<GoRoute> get routes => [
     GoRoute(path: login, builder: (context, state) => const LoginScreen()),
@@ -23,6 +25,10 @@ class AuthRoutes {
         final email = state.uri.queryParameters['email'];
         return VerifyScreen(email: email);
       },
+    ),
+    GoRoute(
+      path: resetPassword,
+      builder: (context, state) => const ResetPasswordScreen(),
     ),
   ];
 }

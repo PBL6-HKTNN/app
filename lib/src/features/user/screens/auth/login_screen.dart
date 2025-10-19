@@ -12,7 +12,7 @@ class LoginScreen extends StatelessWidget {
 
     return ModalLayout(
       title: l10n.login,
-      subtitle: 'Welcome back! Please sign in to your account.',
+      subtitle: l10n.welcomeBackSubtitle,
       child: const LoginForm(),
     );
   }
