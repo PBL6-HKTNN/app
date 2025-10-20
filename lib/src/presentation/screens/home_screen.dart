@@ -1,132 +1,155 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../locale/index.dart';
+import '../layouts/main_navigation_bar.dart';
+import '../../features/user/providers/auth_providers.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      headers: [AppBar(title: const Text('CodeMy App'))],
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome to CodeMy App',
-              style: Theme.of(context).typography.h3,
-            ),
-            const SizedBox(height: 24),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final authState = ref.watch(authStateProvider);
 
-            // Hero section card using Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Getting Started',
-                      style: Theme.of(context).typography.h4,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Learn programming with interactive lessons and modern tools.',
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Button.outline(
-                          child: const Text('Browse Courses'),
-                          onPressed: () {},
-                        ),
-                        const SizedBox(width: 12),
-                        Button.primary(
-                          child: const Text('Start Learning'),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                  ],
+    final welcomeText = authState.isAuthenticated && authState.user != null
+        ? l10n.helloUser(authState.user!.name)
+        : l10n.welcomeMessage;
+    return MainNavigationBar(
+      child: Scaffold(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(welcomeText, style: Theme.of(context).typography.h3),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // LangBtn and ThemeDropdown removed - implemented elsewhere
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Hero section card using Card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.gettingStarted,
+                        style: Theme.of(context).typography.large,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(l10n.gettingStartedDescription),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          Button.outline(
+                            child: Text(l10n.browseCourses),
+                            onPressed: () {},
+                          ),
+                          Button.primary(
+                            child: Text(l10n.startLearning),
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            Text('Features', style: Theme.of(context).typography.h4),
-            const SizedBox(height: 16),
+              Text(l10n.features, style: Theme.of(context).typography.large),
+              const SizedBox(height: 16),
 
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                _buildFeatureCard(
-                  'Interactive Coding',
-                  'Practice coding with real-time feedback and hints.',
-                  Icons.code,
-                ),
-                _buildFeatureCard(
-                  'Progress Tracking',
-                  'Monitor your learning progress and achievements.',
-                  Icons.trending_up,
-                ),
-                _buildFeatureCard(
-                  'Community',
-                  'Connect with other learners and get help.',
-                  Icons.people,
-                ),
-                _buildFeatureCard(
-                  'Certificates',
-                  'Earn certificates upon course completion.',
-                  Icons.workspace_premium,
-                ),
-              ],
-            ),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  _buildFeatureCard(
+                    l10n.interactiveCoding,
+                    l10n.interactiveCodingDescription,
+                    Icons.code,
+                  ),
+                  _buildFeatureCard(
+                    l10n.progressTracking,
+                    l10n.progressTrackingDescription,
+                    Icons.trending_up,
+                  ),
+                  _buildFeatureCard(
+                    l10n.community,
+                    l10n.communityDescription,
+                    Icons.people,
+                  ),
+                  _buildFeatureCard(
+                    l10n.certificates,
+                    l10n.certificatesDescription,
+                    Icons.workspace_premium,
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Quick actions using Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quick Actions',
-                      style: Theme.of(context).typography.h4,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildQuickAction(
-                      context,
-                      'Continue Last Lesson',
-                      'Pick up where you left off',
-                      Icons.play_arrow,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildQuickAction(
-                      context,
-                      'View Profile',
-                      'Check your learning statistics',
-                      Icons.person,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildQuickAction(
-                      context,
-                      'Browse Library',
-                      'Explore our course library',
-                      Icons.library_books,
-                    ),
-                  ],
+              // Quick actions using Card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.quickActions,
+                        style: Theme.of(context).typography.large,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildQuickAction(
+                        context,
+                        l10n.continueLastLesson,
+                        l10n.continueLastLessonDescription,
+                        Icons.play_arrow,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildQuickAction(
+                        context,
+                        l10n.viewProfile,
+                        l10n.viewProfileDescription,
+                        Icons.person,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildQuickAction(
+                        context,
+                        l10n.browseLibrary,
+                        l10n.browseLibraryDescription,
+                        Icons.library_books,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildQuickAction(
+                        context,
+                        'Login', // TODO: Add to l10n
+                        'Navigate to login screen for testing',
+                        Icons.login,
+                        onPressed: () => context.go('/login'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -135,22 +158,29 @@ class HomeScreen extends StatelessWidget {
   Widget _buildFeatureCard(String title, String description, IconData icon) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(8),
+        child: Wrap(
           children: [
-            Icon(icon, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: const TextStyle(fontSize: 12),
-              textAlign: TextAlign.center,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(fontSize: 10),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ],
         ),
@@ -162,10 +192,11 @@ class HomeScreen extends StatelessWidget {
     BuildContext context,
     String title,
     String subtitle,
-    IconData icon,
-  ) {
+    IconData icon, {
+    VoidCallback? onPressed,
+  }) {
     return Button.outline(
-      onPressed: () {},
+      onPressed: onPressed ?? () {},
       child: Row(
         children: [
           Icon(icon, size: 24),
