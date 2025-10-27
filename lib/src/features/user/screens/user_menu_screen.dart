@@ -98,6 +98,20 @@ class UserMenuScreen extends ConsumerWidget {
                 ),
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            // Button to open Profile screen
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Button.primary(
+                  onPressed: () => context.go('/profile'),
+                  child: const Text('View profile'),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 24),
 
             // Settings Card

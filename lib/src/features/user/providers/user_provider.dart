@@ -32,15 +32,9 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import '../models/entity/user_model.dart';
+import '../models/entity/user.dart';
+import 'auth_providers.dart';
 
-//Thay bằng API khi backend sẵn sàng.
-final userProvider = StateProvider<UserModel>((ref) {
-  return UserModel(
-    id: 'u001',
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@gmail.com',
-    role: 'student',
-    avatarUrl: null,
-  );
+final userProvider = Provider<User?>((ref) {
+  return ref.watch(authStateProvider).user;
 });

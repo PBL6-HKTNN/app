@@ -1,7 +1,8 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/user_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/auth_providers.dart';
 import '../widgets/avatar_picker.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -9,151 +10,232 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider);
-
-    // whether current user can edit avatar
-    final canEdit = user.role.toLowerCase() == 'student';
+    final user = ref.watch(authStateProvider).user;
+    final canEdit = (user?.role ?? -1) == 2;
+    final displayName = user?.name ?? 'Guest';
+    final displayEmail = user?.email ?? '';
+    final displayRole = _getRoleText(user?.role ?? -1);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: Column(
+      backgroundColor: Colors.gray[100],
+      child: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.only(top: 48, left: 20, right: 20, bottom: 16),
             width: double.infinity,
+            padding: const EdgeInsets.only(
+              top: 48,
+              left: 16,
+              right: 16,
+              bottom: 20,
+            ),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary]),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 6))],
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.secondary,
+                ],
+              ),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(24),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF000000).withOpacity(0.12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: SafeArea(
               bottom: false,
               child: Row(
                 children: [
-                  // compact avatar preview left
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.15),
-                      border: Border.all(color: Colors.white.withOpacity(0.18)),
-                    ),
-                    child: CircleAvatar(
-                      radius: 28,
-                      backgroundImage: user.avatarUrl != null
-                          ? (user.avatarUrl!.startsWith('http') ? NetworkImage(user.avatarUrl!) : FileImage(File(user.avatarUrl!)) as ImageProvider)
-                          : null,
-                      child: user.avatarUrl == null ? const Icon(Icons.person, size: 28, color: Colors.white) : null,
+                  // Back button
+                  Button.ghost(
+                    onPressed: () => context.go('/'),
+                    child: const Icon(
+                      LucideIcons.arrowLeft,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // name + role
+                  const Gap(12),
+                  // Avatar + Info
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(8),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 2,
+                            ),
                           ),
-                          child: Text(user.role.toUpperCase(), style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                        )
+                          child: Avatar(
+                            size: 52,
+                            provider: user?.profilePicture.isNotEmpty == true
+                                ? (user!.profilePicture.startsWith('http')
+                                          ? NetworkImage(user.profilePicture)
+                                          : FileImage(
+                                              File(user.profilePicture),
+                                            ))
+                                      as ImageProvider
+                                : null,
+                            initials: user?.name.isNotEmpty == true
+                                ? user!.name[0].toUpperCase()
+                                : '?',
+                          ),
+                        ),
+                        const Gap(12),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                displayName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Gap(4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  displayRole.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      // open settings or logout later
-                    },
-                    icon: const Icon(Icons.settings, color: Colors.white),
+                  // Settings button
+                  Button.ghost(
+                    onPressed: () {},
+                    child: const Icon(
+                      Icons.settings,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 16),
-
-          // content
+          // Content
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.all(16),
               children: [
-                // big avatar + picker
-                const Center(child: AvatarPicker()),
-                const SizedBox(height: 20),
+                const AvatarPicker(),
+                const Gap(24),
 
-                // Info card
+                // Account Card
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Account', style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 12),
-                        _infoRow(Icons.person, 'Full name', user.name),
-                        const Divider(),
-                        _infoRow(Icons.email, 'Email', user.email),
-                        const Divider(),
-                        _infoRow(Icons.badge, 'Role', user.role),
-                      ],
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      _infoRow(Icons.person, 'Full name', displayName),
+                      const Divider(height: 1),
+                      _infoRow(LucideIcons.mail, 'Email', displayEmail),
+                      const Divider(height: 1),
+                      _infoRow(Icons.badge, 'Role', displayRole),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const Gap(16),
 
-                // Stats card (example)
+                // Stats Card
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _statItem(context, '12', 'Courses'),
-                        _statItem(context, '4', 'Completed'),
-                        _statItem(context, '23', 'Hours Studied'),
+                        _statItem('12', 'Courses'),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: Colors.gray[300],
+                        ),
+                        _statItem('4', 'Completed'),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: Colors.gray[300],
+                        ),
+                        _statItem('23', 'Hours Studied'),
                       ],
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const Gap(24),
 
-                // Action buttons
+                // Action Buttons
                 if (canEdit)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // maybe open edit profile form later
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Profile'),
-                    style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                  Button.primary(
+                    onPressed: () {},
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(LucideIcons.pencil, size: 18),
+                        Gap(8),
+                        Text('Edit Profile'),
+                      ],
+                    ),
                   )
                 else
-                  OutlinedButton(
+                  Button.ghost(
                     onPressed: null,
                     child: const Text('Editing available for Students only'),
-                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                   ),
 
-                const SizedBox(height: 28),
-                // Danger action
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: logout
-                  },
-                  icon: const Icon(Icons.logout_outlined),
-                  label: const Text('Logout'),
+                const Gap(12),
+
+                Button.destructive(
+                  onPressed: () {},
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(LucideIcons.logOut, size: 18),
+                      Gap(8),
+                      Text('Logout'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -165,25 +247,49 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[700]),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Colors.black54))),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Icon(icon, size: 20, color: const Color(0xFF64748B)),
+          const Gap(12),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
   }
 
-  Widget _statItem(BuildContext context, String count, String label) {
+  Widget _statItem(String count, String label) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(count, style: TextStyle(fontSize: 20, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+        Text(
+          count,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+        const Gap(4),
+        Text(label, style: TextStyle(fontSize: 13, color: Colors.gray[600])),
       ],
     );
+  }
+}
+
+String _getRoleText(int role) {
+  switch (role) {
+    case 0:
+      return 'Admin';
+    case 1:
+      return 'Instructor';
+    case 2:
+      return 'Student';
+    default:
+      return 'Unknown';
   }
 }
