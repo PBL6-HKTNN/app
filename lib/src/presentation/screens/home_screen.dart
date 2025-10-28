@@ -57,7 +57,11 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           Button.primary(
                             child: Text(l10n.startLearning),
-                            onPressed: () {},
+                            onPressed: () {
+                              context.go(
+                                '/course/1/learn/2/3?lessonType=video',
+                              );
+                            },
                           ),
                         ],
                       ),
