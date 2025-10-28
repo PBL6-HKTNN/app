@@ -29,6 +29,13 @@ class LessonScreen extends ConsumerWidget {
             Button(
               style: ButtonStyle.ghost(),
               onPressed: () {
+                context.push('/course/$courseId/content');
+              },
+              child: const Icon(RadixIcons.hamburgerMenu),
+            ),
+            Button(
+              style: ButtonStyle.ghost(),
+              onPressed: () {
                 context.go('/');
               },
               child: const Icon(RadixIcons.cross1),
