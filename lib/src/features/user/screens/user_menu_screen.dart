@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../providers/auth_providers.dart';
-import '../../../presentation/providers/theme_provider.dart';
 import '../../../presentation/layouts/main_navigation_bar.dart';
 import '../../../locale/index.dart';
 
@@ -98,6 +97,20 @@ class UserMenuScreen extends ConsumerWidget {
                 ),
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            // Button to open Profile screen
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Button.primary(
+                  onPressed: () => context.go('/profile'),
+                  child: const Text('View profile'),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 24),
 
             // Settings Card
@@ -174,31 +187,6 @@ class UserMenuScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoRow(
-    BuildContext context,
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.mutedForeground,
-          ),
-        ),
-        Text(
-          value,
-          style: Theme.of(
-            context,
-          ).typography.semiBold.copyWith(color: valueColor),
-        ),
-      ],
     );
   }
 

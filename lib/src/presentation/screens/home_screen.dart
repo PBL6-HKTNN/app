@@ -53,11 +53,17 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           Button.outline(
                             child: Text(l10n.browseCourses),
-                            onPressed: () {},
+                            onPressed: () {
+                              context.go('/courses');
+                            },
                           ),
                           Button.primary(
                             child: Text(l10n.startLearning),
-                            onPressed: () {},
+                            onPressed: () {
+                              context.go(
+                                '/course/1/learn/2/3?lessonType=video',
+                              );
+                            },
                           ),
                         ],
                       ),

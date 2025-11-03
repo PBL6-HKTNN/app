@@ -1,41 +1,38 @@
-// import 'package:flutter/widgets.dart';
-// import '../screens/course_list_screen.dart';
-// import '../screens/course_detail_screen.dart';
+import '../screens/wishlist_course_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../screens/course_list_screen.dart';
+import '../screens/course_detail_screen.dart';
+import '../screens/review_screen.dart';
+import '../screens/joined_course_screen.dart';
 
-// Route<dynamic> generateRoute(RouteSettings settings) {
-//   // Extract route name and parameters
-//   if (settings.name?.startsWith('/course/') ?? false) {
-//     final courseId = settings.name!.split('/').last;
-    
-//     return PageRouteBuilder(
-//       settings: settings,
-//       pageBuilder: (context, animation, secondaryAnimation) => 
-//         CourseDetailScreen(courseId: courseId),
-//       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-//         const begin = Offset(1.0, 0.0);
-//         const end = Offset.zero;
-//         const curve = Curves.easeInOut;
-//         var tween = Tween(begin: begin, end: end)
-//             .chain(CurveTween(curve: curve));
-//         var offsetAnimation = animation.drive(tween);
-//         return SlideTransition(position: offsetAnimation, child: child);
-//       },
-//     );
-//   }
-  
-//   // Default route for home
-//   if (settings.name == '/' || settings.name == null) {
-//     return PageRouteBuilder(
-//       settings: settings,
-//       pageBuilder: (context, animation, secondaryAnimation) => 
-//         const CourseListScreen(),
-//     );
-//   }
-
-//   // Handle unknown routes
-//   return PageRouteBuilder(
-//     settings: settings,
-//     pageBuilder: (context, animation, secondaryAnimation) => 
-//       const CourseListScreen(),
-//   );
-// }
+class CourseRoutes {
+  static final routes = [
+    GoRoute(
+      path: '/courses',
+      builder: (context, state) => const CourseListScreen(),
+    ),
+    GoRoute(
+      path: '/your-courses',
+      builder: (context, state) => const JoinedCourseScreen(),
+    ),
+    GoRoute(
+      path: '/wishlist',
+      builder: (context, state) => const WishlistScreen(),
+    ),
+    GoRoute(
+      path: '/courses/:courseId',
+      builder: (context, state) {
+        final courseId = state.pathParameters['courseId']!;
+        final source = state.uri.queryParameters['source'] ?? 'all';
+        return CourseDetailScreen(courseId: courseId, source: source);
+      },
+    ),
+    GoRoute(
+      path: '/course/:courseId/reviews',
+      builder: (context, state) {
+        final courseId = state.pathParameters['courseId']!;
+        return ReviewScreen(courseId: courseId);
+      },
+    ),
+  ];
+}
