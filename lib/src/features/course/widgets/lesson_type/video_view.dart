@@ -36,10 +36,25 @@ class _VideoViewState extends ConsumerState<VideoView> {
   }
 
   @override
-  void dispose() {
+  void didUpdateWidget(VideoView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset video if lesson changed
+    if (oldWidget.lesson?.id != widget.lesson?.id ||
+        oldWidget.lessonId != widget.lessonId) {
+      _resetVideo();
+    }
+  }
+
+  void _resetVideo() {
     _controller?.removeListener(_onVideoPositionChanged);
     _controller?.dispose();
-    super.dispose();
+    _controller = null;
+    _initializing = true;
+    _isPlaying = false;
+    _currentPosition = Duration.zero;
+    _totalDuration = Duration.zero;
+    _progress = 0.0;
+    _errorMessage = null;
   }
 
   Future<void> _initializeVideo(String contentUrl) async {
@@ -51,27 +66,48 @@ class _VideoViewState extends ConsumerState<VideoView> {
       return;
     }
 
+    Logger.info('Initializing video with URL: $contentUrl', tag: 'VIDEO_VIEW');
+
     try {
       final uri = Uri.parse(contentUrl);
-      _controller = uri.scheme == 'asset'
-          ? VideoPlayerController.asset(uri.path)
-          : VideoPlayerController.networkUrl(uri);
+      Logger.info('Parsed URI: ${uri.scheme} - ${uri.path}', tag: 'VIDEO_VIEW');
 
+      if (uri.scheme == 'asset') {
+        _controller = VideoPlayerController.asset(uri.path);
+      } else if (uri.scheme.startsWith('http')) {
+        _controller = VideoPlayerController.networkUrl(uri);
+      } else {
+        // Handle file:// or other schemes
+        _controller = VideoPlayerController.networkUrl(uri);
+      }
+
+      Logger.info('Controller created, initializing...', tag: 'VIDEO_VIEW');
       await _controller!.initialize();
+
+      if (!_controller!.value.isInitialized) {
+        throw Exception('Video controller failed to initialize');
+      }
+
       _totalDuration = _controller!.value.duration;
+      Logger.info(
+        'Video initialized successfully. Duration: $_totalDuration, Aspect ratio: ${_controller!.value.aspectRatio}',
+        tag: 'VIDEO_VIEW',
+      );
+
       _controller!.addListener(_onVideoPositionChanged);
 
       setState(() {
         _initializing = false;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
       Logger.error(
         'Failed to initialize video',
         tag: 'LESSON_VIDEO',
         error: error,
+        stackTrace: stackTrace,
       );
       setState(() {
-        _errorMessage = 'Failed to load video content.';
+        _errorMessage = 'Failed to load video content: $error';
         _initializing = false;
       });
     }
@@ -176,23 +212,49 @@ class _VideoViewState extends ConsumerState<VideoView> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Text(
-          _errorMessage!,
-          style: Theme.of(context).typography.small.copyWith(color: Colors.red),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _errorMessage!,
+              style: Theme.of(
+                context,
+              ).typography.small.copyWith(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const Gap(8),
+            Text(
+              'URL: ${widget.lesson?.contentUrl ?? "loading..."}',
+              style: Theme.of(context).typography.xSmall.copyWith(
+                color: Theme.of(context).colorScheme.mutedForeground,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     }
 
-    if (_controller == null) {
+    if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: Text('Video not available'));
     }
+
+    // Ensure aspect ratio is valid
+    final aspectRatio = _controller!.value.aspectRatio;
+    final validAspectRatio = aspectRatio > 0 && aspectRatio.isFinite
+        ? aspectRatio
+        : 16 / 9;
+
+    Logger.info(
+      'Rendering video with aspect ratio: $validAspectRatio',
+      tag: 'VIDEO_VIEW',
+    );
 
     return Card(
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: _controller!.value.aspectRatio,
+            aspectRatio: validAspectRatio,
             child: VideoPlayer(_controller!),
           ),
           LinearProgressIndicator(value: _progress, minHeight: 4),

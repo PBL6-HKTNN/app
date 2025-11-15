@@ -112,7 +112,7 @@ class QuizView extends ConsumerWidget {
           ),
           const Gap(16),
           Button(
-            style: ButtonStyle.primary(size: ButtonSize.large),
+            style: ButtonStyle.primary(size: ButtonSize.normal),
             onPressed: () => context.push(quizUri.toString()),
             child: const Row(
               mainAxisSize: MainAxisSize.min,

@@ -170,7 +170,7 @@ class QuizDoingScreen extends ConsumerWidget {
             ),
             const Divider(),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
               child: Column(
                 children: [
                   Row(
@@ -178,7 +178,7 @@ class QuizDoingScreen extends ConsumerWidget {
                     children: [
                       if (controller.canGoPrevious)
                         Button(
-                          style: ButtonStyle.outline(),
+                          style: ButtonStyle.outline(size: ButtonSize.small),
                           leading: const Icon(RadixIcons.arrowLeft),
                           onPressed: state.isSubmitting
                               ? null
@@ -193,10 +193,11 @@ class QuizDoingScreen extends ConsumerWidget {
                           color: currentAnswer == null
                               ? material.Colors.orange
                               : material.Colors.green,
+                          fontSize: 14,
                         ),
                       ),
                       Button(
-                        style: ButtonStyle.primary(),
+                        style: ButtonStyle.primary(size: ButtonSize.small),
                         trailing: Icon(
                           controller.canGoNext
                               ? RadixIcons.arrowRight
