@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/course_provider.dart';
+import '../providers/category_provider.dart';
 import '../../course/widgets/filter_bar.dart';
 import '../../course/widgets/course_card.dart';
 import '../services/course_service.dart';
@@ -41,6 +42,7 @@ class _JoinedCourseScreenState extends ConsumerState<JoinedCourseScreen> {
     final state = ref.watch(joinedCoursesProvider);
     final notifier = ref.read(joinedCoursesProvider.notifier);
     final courses = notifier.filtered;
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return DrawerOverlay(
       child: Stack(
@@ -142,25 +144,46 @@ class _JoinedCourseScreenState extends ConsumerState<JoinedCourseScreen> {
                           horizontal: 12,
                           vertical: 8,
                         ),
-                        child: FilterBar(
-                          onSearch: (q) {
-                            notifier.applyFilter(
-                              notifier.state.filter.copyWith(query: q),
-                            );
-                          },
-                          selectedCategory: notifier.state.filter.category,
-                          onCategorySelected: (cat) async {
-                            if (cat == null || cat.toLowerCase() == 'all') {
-                              await notifier.load(type: CourseListType.joined);
+                        child: categoriesAsync.when(
+                          data: (categories) => FilterBar(
+                            onSearch: (q) {
                               notifier.applyFilter(
-                                notifier.state.filter.copyWith(category: 'All'),
+                                state.filter.copyWith(query: q),
                               );
-                            } else {
-                              notifier.applyFilter(
-                                notifier.state.filter.copyWith(category: cat),
-                              );
-                            }
-                          },
+                            },
+                            selectedCategoryId: state.filter.category,
+                            categories: categories
+                                .map(
+                                  (category) => FilterCategoryOption(
+                                    id: category.id,
+                                    label: category.name,
+                                  ),
+                                )
+                                .toList(),
+                            onCategorySelected: (categoryId) async {
+                              if (categoryId == null) {
+                                await notifier.load(
+                                  type: CourseListType.joined,
+                                );
+                                notifier.applyFilter(
+                                  state.filter.copyWith(category: null),
+                                );
+                              } else {
+                                notifier.applyFilter(
+                                  state.filter.copyWith(category: categoryId),
+                                );
+                              }
+                            },
+                          ),
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(size: 20),
+                          ),
+                          error: (error, _) => Text(
+                            error.toString(),
+                            style: Theme.of(
+                              context,
+                            ).typography.small.copyWith(color: Colors.red),
+                          ),
                         ),
                       ),
                     ),

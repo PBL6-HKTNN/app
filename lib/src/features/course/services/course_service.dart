@@ -1,105 +1,188 @@
-import 'dart:async';
-import 'package:decimal/decimal.dart';
-import '../../course/models/entities/course.dart';
-import '../../course/models/entities/module.dart';
-import '../../course/models/entities/lesson.dart';
-import '../../course/enums/lesson_type.dart';
+import 'package:codemy_app/src/core/conf/api_routes.dart';
+import 'package:codemy_app/src/core/networks/api_client.dart';
+import 'package:codemy_app/src/core/networks/models/api_res.dart';
+import 'package:codemy_app/src/core/utils/logger.dart';
+import 'package:codemy_app/src/features/course/models/dto/course_content.dart';
+import 'package:codemy_app/src/features/course/models/dto/course_requests.dart';
+import 'package:codemy_app/src/features/course/models/entities/course.dart';
+import 'package:codemy_app/src/features/course/models/entities/module.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 enum CourseListType { all, joined, wishlist }
 
 class CourseService {
-  final List<Course> _allCourses = [];
-  CourseService() {
-    _allCourses.addAll(_generateFakeCourses());
-  }
+  CourseService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  Future<List<Course>> fetchCourses({
-    CourseListType type = CourseListType.all,
-    int limit = 20,
+  final ApiClient _apiClient;
+
+  Future<ApiRes<List<Course>>> getCourses({
+    CourseQueryParams? queryParams,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    final params = queryParams?.toQueryParameters() ?? {};
+    final url = _withQuery(ApiRoutes.COURSE.list, params);
 
-    switch (type) {
-      case CourseListType.joined:
-        // giả lập user đã tham gia 1 số khóa học
-        return _allCourses
-            .where((c) => int.parse(c.id.replaceAll('c', '')) % 3 == 0)
-            .take(limit)
-            .toList();
-      case CourseListType.wishlist:
-        return _allCourses
-            .where((c) => int.parse(c.id.replaceAll('c', '')) % 4 == 0)
-            .take(limit)
-            .toList();
-      case CourseListType.all:
-      default:
-        return _allCourses.take(limit).toList();
+    try {
+      final response = await _apiClient.get(url);
+      return ApiRes<List<Course>>.fromJson(
+        response,
+        (data) => (data as List<dynamic>)
+            .map((item) => Course.fromJson(item as Map<String, dynamic>))
+            .toList(),
+      );
+    } catch (error) {
+      Logger.error('Failed to fetch courses', tag: 'COURSE', error: error);
+      return ApiRes<List<Course>>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
     }
   }
 
-  List<Course> _generateFakeCourses() {
-    final categories = ['Flutter', 'AI', 'Web', 'DevOps', 'Design'];
-    final List<Course> list = [];
-
-    for (int i = 1; i <= 30; i++) {
-      final cat = categories[i % categories.length];
-      final title = '$cat Course #$i';
-
-      final modules = List.generate(3, (m) {
-        final moduleId = 'm${i}_$m';
-        final lessons = List.generate(4, (l) {
-          return Lesson(
-            id: 'l${i}_$m$l',
-            title: 'Lesson ${l + 1}',
-            duration: '${10 + l * 5} min',
-            lessonType: l % 3 == 0
-                ? LessonType.video
-                : (l % 3 == 1 ? LessonType.markdown : LessonType.quiz),
-            orderIndex: l + 1,
-            isPreviewable: l == 0,
-            createdAt: DateTime.now().subtract(Duration(days: i + m + l)),
-          );
-        });
-
-        final totalDurationMinutes = lessons.fold<int>(
-          0,
-          (sum, l) => sum + int.parse(l.duration.split(' ')[0]),
-        );
-        return Module(
-          id: moduleId,
-          title: 'Module ${m + 1}',
-          duration: Duration(minutes: totalDurationMinutes),
-          numLessons: lessons.length,
-          order: m + 1,
-          lessons: lessons,
-          createdAt: DateTime.now().subtract(Duration(days: i + m)),
-        );
-      });
-
-      final totalCourseDuration = Duration(
-        minutes: modules.fold<int>(
-          0,
-          (sum, mod) => sum + mod.duration.inMinutes,
-        ),
+  Future<ApiRes<Course>> getCourseById(String courseId) async {
+    final url = ApiRoutes.COURSE.byId(courseId);
+    try {
+      final response = await _apiClient.get(url);
+      return ApiRes<Course>.fromJson(
+        response,
+        (data) => Course.fromJson(data as Map<String, dynamic>),
       );
-
-      list.add(
-        Course(
-          id: 'c$i',
-          title: title,
-          description:
-              'A comprehensive $cat course covering theory, examples, and practical exercises.',
-          thumbnail: '',
-          duration: totalCourseDuration,
-          price: Decimal.parse((9 + i % 5).toString()),
-          language: (i % 2 == 0) ? 'English' : 'Vietnamese',
-          numReviews: 10 + i,
-          averageRating: Decimal.parse('4.${i % 5}'),
-          modules: modules,
-          createdAt: DateTime.now().subtract(Duration(days: i)),
-        ),
+    } catch (error) {
+      Logger.error(
+        'Failed to fetch course detail',
+        tag: 'COURSE',
+        error: error,
+      );
+      return ApiRes<Course>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
       );
     }
-    return list;
+  }
+
+  Future<ApiRes<CourseContent>> getCourseContent(String courseId) async {
+    final url = ApiRoutes.COURSE.content(courseId);
+    try {
+      final response = await _apiClient.get(url);
+      return ApiRes<CourseContent>.fromJson(
+        response,
+        (data) => CourseContent.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to fetch course content',
+        tag: 'COURSE',
+        error: error,
+      );
+      return ApiRes<CourseContent>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<List<Module>>> getModulesByCourse(String courseId) async {
+    final url = ApiRoutes.COURSE.modules(courseId);
+    try {
+      final response = await _apiClient.get(url);
+      return ApiRes<List<Module>>.fromJson(
+        response,
+        (data) => (data as List<dynamic>)
+            .map((item) => Module.fromJson(item as Map<String, dynamic>))
+            .toList(),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to fetch course modules',
+        tag: 'COURSE',
+        error: error,
+      );
+      return ApiRes<List<Module>>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<Course>> createCourse(CreateCourseRequest request) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.COURSE.create,
+        body: request.toJson(),
+      );
+      return ApiRes<Course>.fromJson(
+        response,
+        (data) => Course.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error('Failed to create course', tag: 'COURSE', error: error);
+      return ApiRes<Course>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<Course>> updateCourse(
+    String courseId,
+    UpdateCourseRequest request,
+  ) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.COURSE.update(courseId),
+        body: request.toJson(),
+      );
+      return ApiRes<Course>.fromJson(
+        response,
+        (data) => Course.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error('Failed to update course', tag: 'COURSE', error: error);
+      return ApiRes<Course>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<String>> deleteCourse(String courseId) async {
+    try {
+      final response = await _apiClient.delete(
+        ApiRoutes.COURSE.delete(courseId),
+      );
+      return ApiRes<String>.fromJson(
+        response,
+        (data) => data?.toString() ?? '',
+      );
+    } catch (error) {
+      Logger.error('Failed to delete course', tag: 'COURSE', error: error);
+      return ApiRes<String>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  String _withQuery(String url, Map<String, String> params) {
+    if (params.isEmpty) {
+      return url;
+    }
+    final query = params.entries
+        .map((entry) => '${entry.key}=${Uri.encodeQueryComponent(entry.value)}')
+        .join('&');
+    return '$url?$query';
   }
 }

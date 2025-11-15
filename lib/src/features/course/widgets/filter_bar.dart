@@ -2,16 +2,25 @@ import 'dart:async';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:flutter/widgets.dart';
 
+class FilterCategoryOption {
+  final String id;
+  final String label;
+
+  const FilterCategoryOption({required this.id, required this.label});
+}
+
 class FilterBar extends StatefulWidget {
   final void Function(String query) onSearch;
-  final void Function(String? category) onCategorySelected;
-  final String? selectedCategory;
+  final void Function(String? categoryId) onCategorySelected;
+  final String? selectedCategoryId;
+  final List<FilterCategoryOption> categories;
 
   const FilterBar({
     super.key,
     required this.onSearch,
     required this.onCategorySelected,
-    this.selectedCategory,
+    this.selectedCategoryId,
+    this.categories = const <FilterCategoryOption>[],
   });
 
   @override
@@ -21,13 +30,23 @@ class FilterBar extends StatefulWidget {
 class _FilterBarState extends State<FilterBar> {
   final _ctrl = TextEditingController();
   Timer? _debounce;
-  final categories = ['Flutter', 'AI', 'Web', 'DevOps', 'Design', 'All'];
-  String? selected;
+  String? selectedValue;
 
   @override
   void initState() {
     super.initState();
-    selected = widget.selectedCategory ?? 'All';
+    selectedValue = widget.selectedCategoryId ?? _defaultCategoryId;
+  }
+
+  @override
+  void didUpdateWidget(covariant FilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newDefault = widget.selectedCategoryId ?? _defaultCategoryId;
+    if (selectedValue != newDefault) {
+      setState(() {
+        selectedValue = newDefault;
+      });
+    }
   }
 
   @override
@@ -44,8 +63,28 @@ class _FilterBarState extends State<FilterBar> {
     });
   }
 
+  static const _allSentinel = '__all__';
+
+  String get _defaultCategoryId {
+    if (widget.categories.isEmpty) {
+      return _allSentinel;
+    }
+    return widget.categories.first.id;
+  }
+
+  List<FilterCategoryOption> get _categoriesWithAll {
+    if (widget.categories.any((option) => option.id == _allSentinel)) {
+      return widget.categories;
+    }
+    return [
+      const FilterCategoryOption(id: _allSentinel, label: 'All'),
+      ...widget.categories,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final categories = _categoriesWithAll;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
@@ -69,21 +108,31 @@ class _FilterBarState extends State<FilterBar> {
             SizedBox(
               width: 200,
               child: Select<String>(
-                value: selected,
-                itemBuilder: (context, value) => Text(value),
+                value: selectedValue,
+                itemBuilder: (context, value) {
+                  final option = categories.firstWhere(
+                    (element) => element.id == value,
+                    orElse: () => FilterCategoryOption(id: value, label: value),
+                  );
+                  return Text(option.label);
+                },
                 popupWidthConstraint: PopoverConstraint.anchorFixedSize,
                 onChanged: (value) {
                   if (value != null) {
-                    setState(() => selected = value);
-                    widget.onCategorySelected(value == 'All' ? 'All' : value);
+                    setState(() => selectedValue = value);
+                    widget.onCategorySelected(
+                      value == _allSentinel ? null : value,
+                    );
                   }
                 },
                 popup: SelectPopup(
                   items: SelectItemList(
                     children: categories
                         .map(
-                          (cat) =>
-                              SelectItemButton(value: cat, child: Text(cat)),
+                          (cat) => SelectItemButton(
+                            value: cat.id,
+                            child: Text(cat.label),
+                          ),
                         )
                         .toList(),
                   ),

@@ -23,7 +23,9 @@ class EntityModel {
   factory EntityModel.fromJson(Map<String, dynamic> json) {
     return EntityModel(
       id: json['id'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
       createdBy: json['createdBy'] as String?,
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)

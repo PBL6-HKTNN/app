@@ -1,31 +1,50 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:codemy_app/src/features/course/models/entities/quiz/index.dart';
+import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_submission_result.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:codemy_app/src/features/course/providers/quiz_provider.mock.dart';
 
-class ResultView extends ConsumerWidget {
-  const ResultView({super.key});
+class ResultView extends StatelessWidget {
+  final Quiz quiz;
+  final QuizSubmissionResult attempt;
+  final VoidCallback onContinue;
+  final VoidCallback onRetake;
+  final VoidCallback? onReview;
+
+  const ResultView({
+    super.key,
+    required this.quiz,
+    required this.attempt,
+    required this.onContinue,
+    required this.onRetake,
+    this.onReview,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final quizNotifier = ref.watch(quizProvider.notifier);
-    final score = quizNotifier.calculateScore();
-    final totalMarks = quizNotifier.totalMarks;
-    final percentage = (score / totalMarks * 100).toStringAsFixed(1);
+  Widget build(BuildContext context) {
+    final totalMarks = quiz.totalMarks == 0 ? 1 : quiz.totalMarks;
+    final score = attempt.score;
+    final percentage = (score / totalMarks * 100).clamp(0, 100);
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              RadixIcons.checkCircled,
+              attempt.passed
+                  ? RadixIcons.checkCircled
+                  : RadixIcons.crossCircled,
               size: 64,
-              color: Theme.of(context).colorScheme.primary,
+              color: attempt.passed
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.red,
             ),
             const Gap(24),
-            Text('Quiz Completed!', style: Theme.of(context).typography.h2),
+            Text(
+              attempt.passed ? 'Quiz Completed!' : 'Quiz Submitted',
+              style: Theme.of(context).typography.h2,
+            ),
             const Gap(16),
             Text(
               'Your Score',
@@ -35,7 +54,7 @@ class ResultView extends ConsumerWidget {
             ),
             const Gap(8),
             Text(
-              '$score / $totalMarks',
+              '$score / ${quiz.totalMarks}',
               style: Theme.of(context).typography.h1.copyWith(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -43,33 +62,33 @@ class ResultView extends ConsumerWidget {
             ),
             const Gap(8),
             Text(
-              '$percentage%',
+              '${percentage.toStringAsFixed(1)}% ${attempt.passed ? '(Passed)' : '(Failed)'}',
               style: Theme.of(context).typography.large.copyWith(
-                color: Theme.of(context).colorScheme.mutedForeground,
+                color: attempt.passed ? Colors.green : Colors.red,
               ),
             ),
             const Gap(24),
             LinearProgressIndicator(value: score / totalMarks, minHeight: 8),
             const Gap(32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
               children: [
                 Button(
                   style: ButtonStyle.outline(),
-                  onPressed: () {
-                    // Review answers
-                  },
+                  onPressed: onReview,
                   child: const Text('Review Answers'),
                 ),
-                const Gap(12),
                 Button(
                   style: ButtonStyle.primary(),
-                  onPressed: () {
-                    // Continue to next lesson
-                    quizNotifier.resetQuiz();
-                    context.go('/');
-                  },
+                  onPressed: onContinue,
                   child: const Text('Continue'),
+                ),
+                Button(
+                  style: ButtonStyle.ghost(),
+                  onPressed: onRetake,
+                  child: const Text('Retake Quiz'),
                 ),
               ],
             ),

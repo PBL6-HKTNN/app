@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:codemy_app/src/locale/supported_lang.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:codemy_app/router/app_router.dart';
@@ -10,10 +13,27 @@ import 'src/core/guards/auth_guard.dart';
 import 'src/core/conf/app_config.dart';
 import 'src/features/user/services/google_auth_service.dart';
 
+class _DevHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = super.createHttpClient(context);
+    client.badCertificateCallback = (cert, host, port) => true; // Trust all
+    return client;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await AppConfig.load();
   await GoogleAuthService.initialize();
+  // Enable trusting self-signed certs only in debug/dev if env flag set
+  final allowSelfSigned =
+      (dotenv.env['ALLOW_SELF_SIGNED_CERTS']?.toLowerCase() == 'true');
+  if (!kIsWeb && allowSelfSigned && kDebugMode) {
+    HttpOverrides.global = _DevHttpOverrides();
+    HttpClient.enableTimelineLogging = true;
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
 

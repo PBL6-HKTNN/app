@@ -1,5 +1,6 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../models/entities/course.dart';
+import '../models/entities/module.dart';
 import 'package:go_router/go_router.dart';
 
 class CourseCard extends StatelessWidget {
@@ -8,10 +9,15 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalLessons = course.modules.fold<int>(
+    final modules = course.modules ?? <Module>[];
+    final totalLessons = modules.fold<int>(
       0,
-      (sum, mod) => sum + mod.numLessons,
+      (sum, mod) => sum + (mod.numberOfLessons),
     );
+    final moduleCount = modules.isEmpty
+        ? course.numberOfModules
+        : modules.length;
+    final description = course.description ?? 'No description provided yet.';
 
     return Card(
       padding: const EdgeInsets.all(14),
@@ -57,7 +63,7 @@ class CourseCard extends StatelessWidget {
 
                 // Mô tả
                 Text(
-                  course.description,
+                  description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -73,14 +79,10 @@ class CourseCard extends StatelessWidget {
                   spacing: 16,
                   runSpacing: 6,
                   children: [
-                    _infoRow(
-                      icon: LucideIcons.clock,
-                      label: _formatDuration(course.duration),
-                    ),
+                    _infoRow(icon: LucideIcons.clock, label: course.duration),
                     _infoRow(
                       icon: LucideIcons.bookOpen,
-                      label:
-                          '${course.modules.length} modules, $totalLessons lessons',
+                      label: '$moduleCount modules, $totalLessons lessons',
                     ),
                   ],
                 ),
@@ -144,12 +146,5 @@ class CourseCard extends StatelessWidget {
       return '${words[0]}\n${words[1]}';
     }
     return title;
-  }
-
-  String _formatDuration(Duration d) {
-    final hours = d.inHours;
-    final mins = d.inMinutes % 60;
-    if (hours > 0) return '${hours}h ${mins}m';
-    return '${mins}m';
   }
 }

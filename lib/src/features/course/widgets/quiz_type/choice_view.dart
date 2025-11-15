@@ -1,19 +1,23 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
-import 'package:codemy_app/src/features/course/providers/quiz_provider.mock.dart';
+import 'package:codemy_app/src/features/course/states/quiz_attempt_state.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class ChoiceView extends ConsumerWidget {
+class ChoiceView extends StatelessWidget {
   final QuizQuestion question;
+  final QuizUserAnswer? answer;
+  final void Function(String answerId) onSelection;
 
-  const ChoiceView({super.key, required this.question});
+  const ChoiceView({
+    super.key,
+    required this.question,
+    required this.answer,
+    required this.onSelection,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final quizNotifier = ref.watch(quizProvider.notifier);
-    final isMultiple = question.type == QuizQuestionType.multipleChoice;
-
+  Widget build(BuildContext context) {
+    final isMultiple = question.questionType == QuizQuestionType.multipleChoice;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -24,8 +28,11 @@ class ChoiceView extends ConsumerWidget {
           ),
         ),
         const Gap(16),
-        ...question.answers.map((answer) {
-          final isSelected = quizNotifier.isAnswerSelected(answer);
+        ...question.answers.map((option) {
+          final optionId = option.id;
+          final isSelected =
+              optionId != null &&
+              (answer?.selectedAnswerIds.contains(optionId) ?? false);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -38,9 +45,11 @@ class ChoiceView extends ConsumerWidget {
                   : null,
               child: Button(
                 style: ButtonStyle.ghost(),
-                onPressed: () {
-                  quizNotifier.selectAnswer(answer);
-                },
+                onPressed: optionId == null
+                    ? null
+                    : () {
+                        onSelection(optionId);
+                      },
                 child: Row(
                   children: [
                     if (isMultiple)
@@ -48,16 +57,16 @@ class ChoiceView extends ConsumerWidget {
                         state: isSelected
                             ? CheckboxState.checked
                             : CheckboxState.unchecked,
-                        onChanged: (_) {
-                          quizNotifier.selectAnswer(answer);
-                        },
+                        onChanged: optionId == null
+                            ? null
+                            : (_) => onSelection(optionId),
                       )
                     else
                       Radio(value: isSelected),
                     const Gap(12),
                     Expanded(
                       child: Text(
-                        answer.text,
+                        option.answerText,
                         style: Theme.of(context).typography.base,
                       ),
                     ),
