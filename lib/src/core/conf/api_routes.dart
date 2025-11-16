@@ -8,6 +8,8 @@ class ApiRoutes {
 
   // Structured route groups
   static final _AuthRoutes AUTH = _AuthRoutes._();
+  static final _UserRoutes USER = _UserRoutes._();
+  static final _StorageRoutes STORAGE = _StorageRoutes._();
   static final _CourseRoutes COURSE = _CourseRoutes._();
   static final _ModuleRoutes MODULE = _ModuleRoutes._();
   static final _LessonRoutes LESSON = _LessonRoutes._();
@@ -37,6 +39,25 @@ class _AuthRoutes {
   String get requestResetPassword =>
       '${ApiRoutes.baseUrl}/Auth/token-reset-password';
   String get logout => '${ApiRoutes.baseUrl}/Auth/logout';
+}
+
+class _UserRoutes {
+  _UserRoutes._();
+
+  String updateProfile(String userId) =>
+      '${ApiRoutes.baseUrl}/User/$userId/profile';
+  String changeAvatar(String userId) =>
+      '${ApiRoutes.baseUrl}/User/$userId/avatar';
+  // Auth related but user specific
+  String changePassword(String userId) =>
+      '${ApiRoutes.baseUrl}/Auth/change-password';
+}
+
+class _StorageRoutes {
+  _StorageRoutes._();
+
+  String upload(String type) => '${ApiRoutes.baseUrl}/api/files/$type';
+  String delete(String fileId) => '${ApiRoutes.baseUrl}/api/files/$fileId';
 }
 
 class _CourseRoutes {
@@ -106,7 +127,7 @@ class _QuizRoutes {
 class _WishlistRoutes {
   _WishlistRoutes._();
 
-  String get list => '${ApiRoutes.baseUrl}/Wishlist';
+  String get list => '${ApiRoutes.baseUrl}/Wishlist/get';
   String add(String courseId) => '${ApiRoutes.baseUrl}/Wishlist/add/$courseId';
   String remove(String courseId) =>
       '${ApiRoutes.baseUrl}/Wishlist/remove/$courseId';

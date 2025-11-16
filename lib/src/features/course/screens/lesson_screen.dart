@@ -1,9 +1,10 @@
 import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
+import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
+import 'package:codemy_app/src/features/course/widgets/course_content_sheet.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/md_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/quiz_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/video_view.dart';
-import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -35,12 +36,22 @@ class LessonScreen extends ConsumerWidget {
               trailing: [
                 Button(
                   style: ButtonStyle.ghost(),
-                  onPressed: () => context.push('/learn/$courseId'),
+                  onPressed: () {
+                    openSheet(
+                      context: context,
+                      builder: (context) => CourseContentSheet(
+                        courseId: courseId,
+                        currentModuleId: moduleId,
+                        currentLessonId: lessonId,
+                      ),
+                      position: OverlayPosition.start,
+                    );
+                  },
                   child: const Icon(RadixIcons.hamburgerMenu),
                 ),
                 Button(
                   style: ButtonStyle.ghost(),
-                  onPressed: () => context.go('/'),
+                  onPressed: () => context.push('/learn/$courseId'),
                   child: const Icon(RadixIcons.cross1),
                 ),
               ],

@@ -6,7 +6,7 @@ class User extends EntityModel {
   final String googleId;
   final int role;
   final int status;
-  final String profilePicture;
+  final String? profilePicture;
   final String? bio;
   final bool emailVerified;
   final int totalCourses;

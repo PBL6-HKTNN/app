@@ -75,6 +75,7 @@ class Course extends EntityModel {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     final baseJson = super.toJson();
     return {

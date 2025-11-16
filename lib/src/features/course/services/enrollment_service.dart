@@ -2,7 +2,9 @@ import 'package:codemy_app/src/core/conf/api_routes.dart';
 import 'package:codemy_app/src/core/networks/api_client.dart';
 import 'package:codemy_app/src/core/networks/models/api_res.dart';
 import 'package:codemy_app/src/core/utils/logger.dart';
-import 'package:codemy_app/src/features/course/models/entities/course.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_responses.dart';
+import 'package:codemy_app/src/features/course/models/entities/enrollment.dart';
 
 class EnrollmentService {
   EnrollmentService({ApiClient? apiClient})
@@ -10,13 +12,17 @@ class EnrollmentService {
 
   final ApiClient _apiClient;
 
-  Future<ApiRes<List<Course>>> getMyCourses() async {
+  Future<ApiRes<List<JoinedCourse>>> getMyCourses({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     try {
-      final response = await _apiClient.get(ApiRoutes.ENROLLMENT.list);
-      return ApiRes<List<Course>>.fromJson(
+      final url = '${ApiRoutes.ENROLLMENT.list}?page=$page&pageSize=$pageSize';
+      final response = await _apiClient.get(url);
+      return ApiRes<List<JoinedCourse>>.fromJson(
         response,
         (data) => (data as List<dynamic>)
-            .map((item) => Course.fromJson(item as Map<String, dynamic>))
+            .map((item) => JoinedCourse.fromJson(item as Map<String, dynamic>))
             .toList(),
       );
     } catch (error) {
@@ -25,7 +31,7 @@ class EnrollmentService {
         tag: 'ENROLLMENT',
         error: error,
       );
-      return ApiRes<List<Course>>(
+      return ApiRes<List<JoinedCourse>>(
         status: 500,
         data: null,
         error: error,
@@ -34,13 +40,17 @@ class EnrollmentService {
     }
   }
 
-  Future<ApiRes<Course>> getCourseEnrollment(String courseId) async {
+  //check if user enrolled course
+  Future<ApiRes<EnrollmentCheckResponse>> getCourseEnrollment(
+    String courseId,
+  ) async {
     final url = ApiRoutes.ENROLLMENT.getCourse(courseId);
     try {
-      final response = await _apiClient.get(url);
-      return ApiRes<Course>.fromJson(
+      final response = await _apiClient.post(url);
+      return ApiRes<EnrollmentCheckResponse>.fromJson(
         response,
-        (data) => Course.fromJson(data as Map<String, dynamic>),
+        (data) =>
+            EnrollmentCheckResponse.fromJson(data as Map<String, dynamic>),
       );
     } catch (error) {
       Logger.error(
@@ -48,7 +58,7 @@ class EnrollmentService {
         tag: 'ENROLLMENT',
         error: error,
       );
-      return ApiRes<Course>(
+      return ApiRes<EnrollmentCheckResponse>(
         status: 500,
         data: null,
         error: error,
@@ -57,15 +67,18 @@ class EnrollmentService {
     }
   }
 
-  Future<ApiRes<void>> enrollCourse(String courseId) async {
+  Future<ApiRes<Enrollment>> enrollCourse(String courseId) async {
     try {
       final response = await _apiClient.post(
         ApiRoutes.ENROLLMENT.enroll(courseId),
       );
-      return ApiRes<void>.fromJson(response, (_) => null);
+      return ApiRes<Enrollment>.fromJson(
+        response,
+        (data) => Enrollment.fromJson(data as Map<String, dynamic>),
+      );
     } catch (error) {
       Logger.error('Failed to enroll course', tag: 'ENROLLMENT', error: error);
-      return ApiRes<void>(
+      return ApiRes<Enrollment>(
         status: 500,
         data: null,
         error: error,
@@ -74,20 +87,25 @@ class EnrollmentService {
     }
   }
 
-  Future<ApiRes<void>> updateEnrollment(Map<String, dynamic> payload) async {
+  Future<ApiRes<Enrollment>> updateEnrollment(
+    UpdateEnrollmentRequest payload,
+  ) async {
     try {
       final response = await _apiClient.post(
         ApiRoutes.ENROLLMENT.update(),
-        body: payload,
+        body: payload.toJson(),
       );
-      return ApiRes<void>.fromJson(response, (_) => null);
+      return ApiRes<Enrollment>.fromJson(
+        response,
+        (data) => Enrollment.fromJson(data as Map<String, dynamic>),
+      );
     } catch (error) {
       Logger.error(
         'Failed to update enrollment',
         tag: 'ENROLLMENT',
         error: error,
       );
-      return ApiRes<void>(
+      return ApiRes<Enrollment>(
         status: 500,
         data: null,
         error: error,

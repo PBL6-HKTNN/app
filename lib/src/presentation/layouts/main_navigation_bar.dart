@@ -14,7 +14,11 @@ class _MainNavigationBarState extends State<MainNavigationBar> {
   @override
   Widget build(BuildContext context) {
     final currentPath = GoRouterState.of(context).uri.path;
-    final currentIndex = currentPath == '/user' ? 1 : 0;
+    final currentIndex = switch (currentPath) {
+      '/user' => 2,
+      '/courses' => 1,
+      _ => 0,
+    };
 
     return SafeArea(
       child: Scaffold(
@@ -32,12 +36,16 @@ class _MainNavigationBarState extends State<MainNavigationBar> {
                   context.go('/');
                   break;
                 case 1:
-                  context.go('/user');
+                  context.push('/courses');
+                  break;
+                case 2:
+                  context.push('/user');
                   break;
               }
             },
             children: [
               _buildNavigationItem('Home', LucideIcons.house),
+              _buildNavigationItem('Courses', LucideIcons.graduationCap),
               _buildNavigationItem('Profile', LucideIcons.user),
             ],
           ),

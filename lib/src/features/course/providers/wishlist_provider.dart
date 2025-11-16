@@ -8,7 +8,7 @@ final wishlistServiceProvider = Provider<WishlistService>((ref) {
   return WishlistService();
 });
 
-final wishlistProvider = FutureProvider.autoDispose<WishlistResponse>((
+final wishlistProvider = FutureProvider.autoDispose<List<WishlistedCourse>>((
   ref,
 ) async {
   final service = ref.read(wishlistServiceProvider);

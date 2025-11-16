@@ -11,16 +11,20 @@ class WishlistService {
 
   final ApiClient _apiClient;
 
-  Future<ApiRes<WishlistResponse>> getWishlist() async {
+  Future<ApiRes<List<WishlistedCourse>>> getWishlist() async {
     try {
       final response = await _apiClient.get(ApiRoutes.WISHLIST.list);
-      return ApiRes<WishlistResponse>.fromJson(
+      return ApiRes<List<WishlistedCourse>>.fromJson(
         response,
-        (data) => WishlistResponse.fromJson(data as Map<String, dynamic>),
+        (data) => (data as List<dynamic>)
+            .map(
+              (item) => WishlistedCourse.fromJson(item as Map<String, dynamic>),
+            )
+            .toList(),
       );
     } catch (error) {
       Logger.error('Failed to fetch wishlist', tag: 'WISHLIST', error: error);
-      return ApiRes<WishlistResponse>(
+      return ApiRes<List<WishlistedCourse>>(
         status: 500,
         data: null,
         error: error,

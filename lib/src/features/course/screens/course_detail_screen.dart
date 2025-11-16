@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../user/providers/auth_providers.dart';
 import '../providers/course_content_provider.dart';
+import '../providers/enrollment_provider.dart';
+import '../providers/wishlist_provider.dart';
 import '../widgets/course_content_view.dart';
 
 class CourseDetailScreen extends ConsumerWidget {
@@ -20,6 +23,8 @@ class CourseDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contentAsync = ref.watch(courseContentProvider(courseId));
+    final enrollmentAsync = ref.watch(courseEnrollmentProvider(courseId));
+    final wishlistAsync = ref.watch(wishlistProvider);
 
     return contentAsync.when(
       loading: () =>
@@ -29,9 +34,23 @@ class CourseDetailScreen extends ConsumerWidget {
       data: (content) {
         final course = content.course;
         final theme = Theme.of(context);
-        final isGuest = true; // TODO: Integrate with auth provider
+        final authState = ref.watch(authStateProvider);
+        final isGuest = !authState.isAuthenticated;
         final thumbnail = course.thumbnail;
         final modules = content.modules;
+
+        // Check enrollment and wishlist status
+        final isEnrolled = enrollmentAsync.when(
+          data: (enrollment) => enrollment.success,
+          loading: () => false,
+          error: (_, __) => false,
+        );
+
+        final isInWishlist = wishlistAsync.when(
+          data: (wishlist) => wishlist.any((item) => item.courseId == courseId),
+          loading: () => false,
+          error: (_, __) => false,
+        );
 
         return Scaffold(
           backgroundColor: theme.colorScheme.background,
@@ -107,21 +126,21 @@ class CourseDetailScreen extends ConsumerWidget {
                     spacing: 16,
                     runSpacing: 6,
                     children: [
-                      _InfoPill(
-                        icon: Icons.access_time,
-                        label: _formatDuration(course.duration),
+                      Chip(
+                        leading: Icon(Icons.access_time),
+                        child: Text(_formatDuration(course.duration)),
                       ),
-                      _InfoPill(
-                        icon: LucideIcons.languages,
-                        label: course.language,
+                      Chip(
+                        leading: Icon(LucideIcons.languages),
+                        child: Text(course.language),
                       ),
-                      _InfoPill(
-                        icon: Icons.monetization_on_outlined,
-                        label: _formatPrice(course.price),
+                      Chip(
+                        leading: Icon(Icons.monetization_on_outlined),
+                        child: Text(_formatPrice(course.price)),
                       ),
-                      _InfoPill(
-                        icon: LucideIcons.layers,
-                        label: '${course.numberOfModules} modules',
+                      Chip(
+                        leading: Icon(LucideIcons.layers),
+                        child: Text('${course.numberOfModules} modules'),
                       ),
                     ],
                   ),
@@ -182,7 +201,65 @@ class CourseDetailScreen extends ConsumerWidget {
                       ],
                     ),
                   if (modules.isNotEmpty) const Gap(24),
-                  Button.primary(
+
+                  // Action buttons based on enrollment status
+                  if (isEnrolled)
+                    Button.primary(
+                      onPressed: () => context.push('/learn/$courseId'),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(LucideIcons.play, size: 18),
+                          Gap(8),
+                          Text('Continue Learning'),
+                        ],
+                      ),
+                    )
+                  else
+                    Button.primary(
+                      onPressed: isGuest
+                          ? () => _handleEnroll(context, isGuest)
+                          : () => _handleEnrollAction(context, ref),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(LucideIcons.bookOpen, size: 18),
+                          Gap(8),
+                          Text('Enroll Now'),
+                        ],
+                      ),
+                    ),
+
+                  const Gap(12),
+
+                  // Wishlist button
+                  if (!isGuest && !isEnrolled)
+                    Button.secondary(
+                      onPressed: () =>
+                          _handleWishlistAction(context, ref, isInWishlist),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isInWishlist
+                                ? LucideIcons.heart
+                                : LucideIcons.heartOff,
+                            size: 18,
+                          ),
+                          const Gap(8),
+                          Text(
+                            isInWishlist
+                                ? 'Remove from Wishlist'
+                                : 'Add to Wishlist',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const Gap(12),
+
+                  // Reviews button
+                  Button.ghost(
                     onPressed: () =>
                         context.push('/course/${course.id}/reviews'),
                     child: const Row(
@@ -191,22 +268,6 @@ class CourseDetailScreen extends ConsumerWidget {
                         Icon(LucideIcons.messageSquare, size: 20),
                         Gap(8),
                         Text('View & Add Reviews'),
-                      ],
-                    ),
-                  ),
-                  const Gap(24),
-                  Button(
-                    style: ButtonStyle.primary(
-                      size: ButtonSize.large,
-                      shape: ButtonShape.rectangle,
-                    ),
-                    onPressed: () => _handleEnroll(context, isGuest),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.school_outlined, size: 20),
-                        const Gap(8),
-                        Text(isGuest ? 'Enroll Now' : 'Enrolled'),
                       ],
                     ),
                   ),
@@ -221,7 +282,7 @@ class CourseDetailScreen extends ConsumerWidget {
 
   void _handleEnroll(BuildContext context, bool isGuest) {
     if (!isGuest) {
-      // TODO: implement enroll flow for authenticated users
+      // This shouldn't be called for authenticated users
       return;
     }
 
@@ -255,6 +316,103 @@ class CourseDetailScreen extends ConsumerWidget {
     );
   }
 
+  void _handleEnrollAction(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(enrollCourseProvider(courseId).future);
+      if (context.mounted) {
+        _showSuccessDialog(
+          context,
+          'Enrollment Successful',
+          'You have successfully enrolled in this course!',
+        );
+        // Refresh enrollment status
+        ref.invalidate(courseEnrollmentProvider(courseId));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        _showErrorDialog(context, 'Enrollment Failed', error.toString());
+      }
+    }
+  }
+
+  void _handleWishlistAction(
+    BuildContext context,
+    WidgetRef ref,
+    bool isInWishlist,
+  ) async {
+    try {
+      if (isInWishlist) {
+        await ref.read(removeFromWishlistProvider(courseId).future);
+        if (context.mounted) {
+          _showSuccessDialog(
+            context,
+            'Removed from Wishlist',
+            'Course has been removed from your wishlist.',
+          );
+        }
+      } else {
+        await ref.read(addToWishlistProvider(courseId).future);
+        if (context.mounted) {
+          _showSuccessDialog(
+            context,
+            'Added to Wishlist',
+            'Course has been added to your wishlist.',
+          );
+        }
+      }
+      // Refresh wishlist
+      ref.invalidate(wishlistProvider);
+    } catch (error) {
+      if (context.mounted) {
+        _showErrorDialog(
+          context,
+          isInWishlist ? 'Remove Failed' : 'Add Failed',
+          error.toString(),
+        );
+      }
+    }
+  }
+
+  void _showSuccessDialog(BuildContext context, String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        leading: Icon(LucideIcons.check, size: 40, color: Colors.green),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Text(message, textAlign: TextAlign.center),
+        actions: [
+          PrimaryButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        leading: Icon(LucideIcons.x, size: 40, color: Colors.red),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Text(message, textAlign: TextAlign.center),
+        actions: [
+          PrimaryButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleLessonNavigate(
     BuildContext context,
     String courseId,
@@ -265,16 +423,7 @@ class CourseDetailScreen extends ConsumerWidget {
   }
 
   void _goBack(BuildContext context) {
-    switch (source) {
-      case 'joined':
-        context.go('/your-courses');
-        break;
-      case 'wishlist':
-        context.go('/wishlist');
-        break;
-      default:
-        context.go('/courses');
-    }
+    context.pop();
   }
 
   static String _formatPrice(Decimal price) {
@@ -297,33 +446,6 @@ class CourseDetailScreen extends ConsumerWidget {
 
   static String _formatRating(double value) {
     return value.toStringAsFixed(1);
-  }
-}
-
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.muted,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const Gap(8),
-          Text(label, style: theme.typography.xSmall),
-        ],
-      ),
-    );
   }
 }
 

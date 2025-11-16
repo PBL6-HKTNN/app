@@ -1,7 +1,9 @@
 import 'dart:io';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+
 import '../providers/auth_providers.dart';
 import '../widgets/avatar_picker.dart';
 
@@ -17,7 +19,7 @@ class ProfileScreen extends ConsumerWidget {
     final displayRole = _getRoleText(user?.role ?? -1);
 
     return Scaffold(
-      backgroundColor: Colors.gray[100],
+      backgroundColor: Theme.of(context).colorScheme.background,
       child: Column(
         children: [
           // Header
@@ -30,12 +32,7 @@ class ProfileScreen extends ConsumerWidget {
               bottom: 20,
             ),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ),
+              color: Theme.of(context).colorScheme.background,
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(24),
               ),
@@ -53,10 +50,10 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   // Back button
                   Button.ghost(
-                    onPressed: () => context.go('/'),
-                    child: const Icon(
+                    onPressed: () => context.pop(),
+                    child: Icon(
                       LucideIcons.arrowLeft,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.foreground,
                       size: 24,
                     ),
                   ),
@@ -70,17 +67,17 @@ class ProfileScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Theme.of(context).colorScheme.muted,
                               width: 2,
                             ),
                           ),
                           child: Avatar(
                             size: 52,
-                            provider: user?.profilePicture.isNotEmpty == true
-                                ? (user!.profilePicture.startsWith('http')
-                                          ? NetworkImage(user.profilePicture)
+                            provider: user?.profilePicture!.isNotEmpty == true
+                                ? (user!.profilePicture!.startsWith('http')
+                                          ? NetworkImage(user.profilePicture!)
                                           : FileImage(
-                                              File(user.profilePicture),
+                                              File(user.profilePicture!),
                                             ))
                                       as ImageProvider
                                 : null,
@@ -97,31 +94,18 @@ class ProfileScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 displayName,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.foreground,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const Gap(4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.18),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  displayRole.toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                              PrimaryBadge(
+                                child: Text(displayRole.toUpperCase()),
                               ),
                             ],
                           ),
@@ -131,10 +115,12 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   // Settings button
                   Button.ghost(
-                    onPressed: () {},
-                    child: const Icon(
+                    onPressed: () {
+                      context.push('/settings');
+                    },
+                    child: Icon(
                       Icons.settings,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.foreground,
                       size: 20,
                     ),
                   ),
@@ -149,8 +135,7 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 const AvatarPicker(),
-                const Gap(24),
-
+                const Gap(16),
                 // Account Card
                 Card(
                   child: Column(
@@ -166,48 +151,26 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      _infoRow(Icons.person, 'Full name', displayName),
+                      _infoRow(context, Icons.person, 'Full name', displayName),
                       const Divider(height: 1),
-                      _infoRow(LucideIcons.mail, 'Email', displayEmail),
+                      _infoRow(
+                        context,
+                        LucideIcons.mail,
+                        'Email',
+                        displayEmail,
+                      ),
                       const Divider(height: 1),
-                      _infoRow(Icons.badge, 'Role', displayRole),
+                      _infoRow(context, Icons.badge, 'Role', displayRole),
                     ],
                   ),
                 ),
-
-                const Gap(16),
-
-                // Stats Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _statItem('12', 'Courses'),
-                        Container(
-                          width: 1,
-                          height: 36,
-                          color: Colors.gray[300],
-                        ),
-                        _statItem('4', 'Completed'),
-                        Container(
-                          width: 1,
-                          height: 36,
-                          color: Colors.gray[300],
-                        ),
-                        _statItem('23', 'Hours Studied'),
-                      ],
-                    ),
-                  ),
-                ),
-
                 const Gap(24),
-
                 // Action Buttons
                 if (canEdit)
                   Button.primary(
-                    onPressed: () {},
+                    onPressed: () {
+                      context.push('/profile/edit');
+                    },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -223,20 +186,7 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: null,
                     child: const Text('Editing available for Students only'),
                   ),
-
-                const Gap(12),
-
-                Button.destructive(
-                  onPressed: () {},
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(LucideIcons.logOut, size: 18),
-                      Gap(8),
-                      Text('Logout'),
-                    ],
-                  ),
-                ),
+                const Gap(24),
               ],
             ),
           ),
@@ -245,16 +195,28 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: const Color(0xFF64748B)),
+          Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.mutedForeground,
+          ),
           const Gap(12),
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.mutedForeground,
+              fontSize: 14,
+            ),
           ),
           const Spacer(),
           Text(
@@ -263,20 +225,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _statItem(String count, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          count,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        const Gap(4),
-        Text(label, style: TextStyle(fontSize: 13, color: Colors.gray[600])),
-      ],
     );
   }
 }

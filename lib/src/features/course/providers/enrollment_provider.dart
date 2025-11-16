@@ -1,5 +1,6 @@
 import 'package:codemy_app/src/core/networks/exception.dart';
-import 'package:codemy_app/src/features/course/models/entities/course.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_responses.dart';
 import 'package:codemy_app/src/features/course/services/enrollment_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,7 +8,7 @@ final enrollmentServiceProvider = Provider<EnrollmentService>((ref) {
   return EnrollmentService();
 });
 
-final enrolledCoursesProvider = FutureProvider.autoDispose<List<Course>>((
+final enrolledCoursesProvider = FutureProvider.autoDispose<List<JoinedCourse>>((
   ref,
 ) async {
   final service = ref.read(enrollmentServiceProvider);
@@ -23,7 +24,7 @@ final enrolledCoursesProvider = FutureProvider.autoDispose<List<Course>>((
 });
 
 final courseEnrollmentProvider = FutureProvider.autoDispose
-    .family<Course, String>((ref, courseId) async {
+    .family<EnrollmentCheckResponse, String>((ref, courseId) async {
       final service = ref.read(enrollmentServiceProvider);
       final response = await service.getCourseEnrollment(courseId);
       if (!response.isSuccess || response.data == null) {
@@ -53,7 +54,7 @@ final enrollCourseProvider = FutureProvider.autoDispose.family<bool, String>((
 });
 
 final updateEnrollmentProvider = FutureProvider.autoDispose
-    .family<bool, Map<String, dynamic>>((ref, payload) async {
+    .family<bool, UpdateEnrollmentRequest>((ref, payload) async {
       final service = ref.read(enrollmentServiceProvider);
       final response = await service.updateEnrollment(payload);
       if (!response.isSuccess) {

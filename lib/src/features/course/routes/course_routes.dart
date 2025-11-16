@@ -1,13 +1,13 @@
 import 'package:go_router/go_router.dart';
 
+import '../screens/course_detail_learn_screen.dart';
 import '../screens/course_detail_screen.dart';
 import '../screens/course_list_screen.dart';
-import '../screens/joined_course_screen.dart';
 import '../screens/learning_content_screen.dart';
 import '../screens/lesson_screen.dart';
 import '../screens/quiz_doing_screen.dart';
 import '../screens/review_screen.dart';
-import '../screens/wishlist_course_screen.dart';
+import '../screens/your_courses_screen.dart';
 
 class CourseRoutes {
   static final routes = [
@@ -17,11 +17,19 @@ class CourseRoutes {
     ),
     GoRoute(
       path: '/your-courses',
-      builder: (context, state) => const JoinedCourseScreen(),
+      builder: (context, state) => const YourCoursesScreen(),
     ),
     GoRoute(
       path: '/wishlist',
-      builder: (context, state) => const WishlistScreen(),
+      builder: (context, state) =>
+          const YourCoursesScreen(initialTab: YourCoursesTab.wishlist),
+    ),
+    GoRoute(
+      path: '/learn/:courseId',
+      builder: (context, state) {
+        final courseId = state.pathParameters['courseId']!;
+        return CourseDetailLearnScreen(courseId: courseId);
+      },
     ),
     GoRoute(
       path: '/courses/:courseId',

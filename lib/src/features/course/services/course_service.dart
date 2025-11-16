@@ -6,9 +6,6 @@ import 'package:codemy_app/src/features/course/models/dto/course_content.dart';
 import 'package:codemy_app/src/features/course/models/dto/course_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/course.dart';
 import 'package:codemy_app/src/features/course/models/entities/module.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
-
-enum CourseListType { all, joined, wishlist }
 
 class CourseService {
   CourseService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();

@@ -1,11 +1,13 @@
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+
 import '../models/entities/course.dart';
 import '../models/entities/module.dart';
-import 'package:go_router/go_router.dart';
 
 class CourseCard extends StatelessWidget {
   final Course course;
-  const CourseCard({super.key, required this.course});
+  final bool isJoined;
+  const CourseCard({super.key, required this.course, this.isJoined = false});
 
   @override
   Widget build(BuildContext context) {
@@ -32,16 +34,36 @@ class CourseCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: Theme.of(context).colorScheme.muted,
             ),
-            child: Center(
-              child: Text(
-                _getShortTitle(course.title),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.background,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: course.thumbnail != null && course.thumbnail!.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      course.thumbnail!,
+                      fit: BoxFit.cover,
+                      width: 90,
+                      height: 64,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: Text(
+                          _getShortTitle(course.title),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.background,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      _getShortTitle(course.title),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.background,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
           ),
 
           const Gap(12),
@@ -107,16 +129,18 @@ class CourseCard extends StatelessWidget {
               PrimaryButton(
                 size: ButtonSize.small,
                 onPressed: () {
-                  String source = 'all';
-                  final route = GoRouterState.of(context).uri.path;
-                  if (route.contains('your-courses'))
-                    source = 'joined';
-                  else if (route.contains('wishlist'))
-                    source = 'wishlist';
-
-                  context.push('/courses/${course.id}?source=$source');
+                  if (isJoined) {
+                    context.push('/learn/${course.id}');
+                  } else {
+                    String source = 'all';
+                    final route = GoRouterState.of(context).uri.path;
+                    if (route.contains('wishlist')) {
+                      source = 'wishlist';
+                    }
+                    context.push('/courses/${course.id}?source=$source');
+                  }
                 },
-                child: const Text('View'),
+                child: Text(isJoined ? 'Learn' : 'View'),
               ),
             ],
           ),

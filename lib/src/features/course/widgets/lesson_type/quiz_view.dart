@@ -85,21 +85,23 @@ class QuizView extends ConsumerWidget {
             spacing: 16,
             runSpacing: 12,
             children: [
-              _InfoPill(
-                icon: RadixIcons.target,
-                label: 'Passing: ${quiz.passingMarks}',
+              Chip(
+                leading: Icon(RadixIcons.target),
+                child: Text('Passing: ${quiz.passingMarks}'),
               ),
-              _InfoPill(
-                icon: LucideIcons.trophy,
-                label: 'Total Marks: ${quiz.totalMarks}',
+              Chip(
+                leading: Icon(LucideIcons.trophy),
+                child: Text('Total Marks: ${quiz.totalMarks}'),
               ),
-              _InfoPill(
-                icon: RadixIcons.clock,
-                label: 'Duration: ${_formatDuration(lesson.duration)}',
+              Chip(
+                leading: Icon(RadixIcons.clock),
+                child: Text('Duration: ${_formatDuration(lesson.duration)}'),
               ),
-              _InfoPill(
-                icon: RadixIcons.star,
-                label: lesson.isPreview ? 'Preview available' : 'Enrolled only',
+              Chip(
+                leading: Icon(RadixIcons.star),
+                child: Text(
+                  lesson.isPreview ? 'Preview available' : 'Enrolled only',
+                ),
               ),
             ],
           ),
@@ -139,31 +141,5 @@ class QuizView extends ConsumerWidget {
       return '${minutes}m';
     }
     return raw;
-  }
-}
-
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.muted,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const Gap(8),
-          Text(label, style: Theme.of(context).typography.xSmall),
-        ],
-      ),
-    );
   }
 }

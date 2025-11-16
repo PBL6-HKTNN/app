@@ -4,7 +4,6 @@ import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
 import 'package:codemy_app/src/features/course/models/dto/quiz_requests.dart';
 import 'package:codemy_app/src/features/course/models/dto/quiz_responses.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/index.dart';
-import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_attempt.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_submission_result.dart';
 import 'package:codemy_app/src/features/course/services/quiz_service.dart';

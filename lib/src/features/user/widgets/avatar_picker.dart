@@ -1,9 +1,11 @@
 import 'dart:io';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:image_picker/image_picker.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_providers.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+
 import '../models/entity/user.dart';
+import '../providers/auth_providers.dart';
 
 class AvatarPicker extends ConsumerStatefulWidget {
   const AvatarPicker({super.key});
@@ -163,10 +165,10 @@ class _AvatarPickerState extends ConsumerState<AvatarPicker> {
                 size: 140,
                 provider: _pickedImage != null
                     ? FileImage(_pickedImage!)
-                    : user?.profilePicture.isNotEmpty == true
-                    ? (user!.profilePicture.startsWith('http')
-                          ? NetworkImage(user.profilePicture)
-                          : FileImage(File(user.profilePicture)))
+                    : user?.profilePicture!.isNotEmpty == true
+                    ? (user!.profilePicture!.startsWith('http')
+                          ? NetworkImage(user.profilePicture!)
+                          : FileImage(File(user.profilePicture!)))
                     : null,
                 initials: (user?.name != null && user!.name.isNotEmpty)
                     ? user.name[0].toUpperCase()
@@ -175,62 +177,6 @@ class _AvatarPickerState extends ConsumerState<AvatarPicker> {
             ),
           ),
           const Gap(16),
-
-          if (isStudent)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  height: 36,
-                  child: Button.primary(
-                    onPressed: () => _pick(ImageSource.gallery),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(LucideIcons.image, size: 16),
-                        Gap(6),
-                        Text('Gallery', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ),
-                const Gap(12),
-                SizedBox(
-                  width: 120,
-                  height: 36,
-                  child: Button.outline(
-                    onPressed: () => _pick(ImageSource.camera),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(LucideIcons.camera, size: 16),
-                        Gap(6),
-                        Text('Camera', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          else
-            Text(
-              'Editing avatar is allowed for Students only',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.mutedForeground,
-              ),
-            ),
-          if (_uploading)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Column(
-                children: [
-                  LinearProgressIndicator(value: _progress),
-                  const Gap(8),
-                  Text('${(_progress * 100).toStringAsFixed(0)}%'),
-                ],
-              ),
-            ),
         ],
       ),
     );
