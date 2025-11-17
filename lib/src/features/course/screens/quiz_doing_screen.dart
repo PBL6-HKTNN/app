@@ -1,5 +1,7 @@
 import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
+import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
 import 'package:codemy_app/src/features/course/providers/quiz_provider.dart';
 import 'package:codemy_app/src/features/course/states/quiz_attempt_state.dart';
 import 'package:codemy_app/src/features/course/widgets/quiz_type/choice_view.dart';
@@ -11,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class QuizDoingScreen extends ConsumerWidget {
+class QuizDoingScreen extends ConsumerStatefulWidget {
   final String courseId;
   final String moduleId;
   final String lessonId;
@@ -26,8 +28,25 @@ class QuizDoingScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (quizId == null || quizId!.isEmpty) {
+  ConsumerState<QuizDoingScreen> createState() => _QuizDoingScreenState();
+}
+
+class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
+  @override
+  void dispose() {
+    // Save progress on unmount
+    final payload = UpdateEnrollmentRequest(
+      enrollmentId: widget.courseId, // Assuming enrollmentId is courseId
+      progressStatus: 1, // In progress
+      lessonId: widget.lessonId,
+    );
+    ref.invalidate(updateEnrollmentProvider(payload));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.quizId == null || widget.quizId!.isEmpty) {
       return Scaffold(
         headers: [
           AppBar(
@@ -45,7 +64,7 @@ class QuizDoingScreen extends ConsumerWidget {
       );
     }
 
-    final provider = quizAttemptControllerProvider(quizId!);
+    final provider = quizAttemptControllerProvider(widget.quizId!);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
 
@@ -309,7 +328,9 @@ class QuizDoingScreen extends ConsumerWidget {
   }
 
   void _goBack(BuildContext context) {
-    context.go('/learn/$courseId/$moduleId/$lessonId');
+    context.go(
+      '/learn/${widget.courseId}/${widget.moduleId}/${widget.lessonId}',
+    );
   }
 }
 

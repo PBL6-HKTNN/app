@@ -1,10 +1,11 @@
-import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'dart:async';
+
 import 'package:codemy_app/src/core/utils/logger.dart';
-import 'package:flutter/widgets.dart';
+import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:video_player/video_player.dart';
-import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 
 class VideoView extends ConsumerStatefulWidget {
   final Lesson? lesson;
@@ -22,17 +23,25 @@ class VideoView extends ConsumerStatefulWidget {
 
 class _VideoViewState extends ConsumerState<VideoView> {
   VideoPlayerController? _controller;
-  bool _initializing = true;
+  bool _initializing = false;
   bool _isPlaying = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
   double _progress = 0.0;
   String? _errorMessage;
+  String? _currentContentUrl;
 
   @override
   void initState() {
     super.initState();
     // Video initialization will happen in build when lesson is available
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_onVideoPositionChanged);
+    _controller?.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,18 +55,27 @@ class _VideoViewState extends ConsumerState<VideoView> {
   }
 
   void _resetVideo() {
-    _controller?.removeListener(_onVideoPositionChanged);
-    _controller?.dispose();
-    _controller = null;
-    _initializing = true;
-    _isPlaying = false;
-    _currentPosition = Duration.zero;
-    _totalDuration = Duration.zero;
-    _progress = 0.0;
-    _errorMessage = null;
+    setState(() {
+      _controller?.removeListener(_onVideoPositionChanged);
+      _controller?.dispose();
+      _controller = null;
+      _initializing = false;
+      _isPlaying = false;
+      _currentPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+      _progress = 0.0;
+      _errorMessage = null;
+      _currentContentUrl = null;
+    });
   }
 
   Future<void> _initializeVideo(String contentUrl) async {
+    setState(() {
+      _initializing = true;
+      _errorMessage = null;
+      _currentContentUrl = contentUrl;
+    });
+
     if (contentUrl.isEmpty) {
       setState(() {
         _errorMessage = 'Video content is not available yet.';
@@ -82,11 +100,13 @@ class _VideoViewState extends ConsumerState<VideoView> {
       }
 
       Logger.info('Controller created, initializing...', tag: 'VIDEO_VIEW');
-      await _controller!.initialize();
+      await _controller!.initialize().timeout(const Duration(seconds: 10));
 
       if (!_controller!.value.isInitialized) {
         throw Exception('Video controller failed to initialize');
       }
+
+      if (!mounted) return;
 
       _totalDuration = _controller!.value.duration;
       Logger.info(
@@ -146,42 +166,37 @@ class _VideoViewState extends ConsumerState<VideoView> {
   @override
   Widget build(BuildContext context) {
     if (widget.lessonId != null) {
-      return Consumer(
-        builder: (context, ref, child) {
-          final lessonAsync = ref.watch(lessonDetailProvider(widget.lessonId!));
+      final lessonAsync = ref.watch(lessonDetailProvider(widget.lessonId!));
 
-          return lessonAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) {
-              Logger.error(
-                'Failed to load lesson for video',
-                tag: 'VIDEO_VIEW',
-                error: error,
-              );
-              return Center(
-                child: Text(
-                  'Failed to load lesson content.',
-                  style: Theme.of(
-                    context,
-                  ).typography.small.copyWith(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            },
-            data: (lesson) {
-              if (lesson.contentUrl == null || lesson.contentUrl!.isEmpty) {
-                return const Center(child: Text('Video content not available'));
-              }
-
-              // Initialize video if not already done
-              if (_controller == null && !_initializing) {
-                _initializing = true;
-                _initializeVideo(lesson.contentUrl!);
-              }
-
-              return _buildVideoContent();
-            },
+      return lessonAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) {
+          Logger.error(
+            'Failed to load lesson for video',
+            tag: 'VIDEO_VIEW',
+            error: error,
           );
+          return Center(
+            child: Text(
+              'Failed to load lesson content.',
+              style: Theme.of(
+                context,
+              ).typography.small.copyWith(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+          );
+        },
+        data: (lesson) {
+          final contentUrl = lesson.contentUrl;
+          if (contentUrl == null || contentUrl.isEmpty) {
+            return const Center(child: Text('Video content not available'));
+          }
+
+          if (_controller == null && !_initializing) {
+            _initializeVideo(contentUrl);
+          }
+
+          return _buildVideoContent(contentUrl);
         },
       );
     }
@@ -198,14 +213,13 @@ class _VideoViewState extends ConsumerState<VideoView> {
 
     // Initialize video if not already done
     if (_controller == null && !_initializing) {
-      _initializing = true;
       _initializeVideo(widget.lesson!.contentUrl!);
     }
 
-    return _buildVideoContent();
+    return _buildVideoContent(widget.lesson!.contentUrl!);
   }
 
-  Widget _buildVideoContent() {
+  Widget _buildVideoContent(String contentUrl) {
     if (_initializing) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -224,7 +238,7 @@ class _VideoViewState extends ConsumerState<VideoView> {
             ),
             const Gap(8),
             Text(
-              'URL: ${widget.lesson?.contentUrl ?? "loading..."}',
+              'URL: ${_currentContentUrl ?? contentUrl}',
               style: Theme.of(context).typography.xSmall.copyWith(
                 color: Theme.of(context).colorScheme.mutedForeground,
               ),

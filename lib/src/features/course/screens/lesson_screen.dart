@@ -1,5 +1,7 @@
 import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
+import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
 import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 import 'package:codemy_app/src/features/course/widgets/course_content_sheet.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/md_view.dart';
@@ -9,7 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class LessonScreen extends ConsumerWidget {
+class LessonScreen extends ConsumerStatefulWidget {
   final String courseId;
   final String moduleId;
   final String lessonId;
@@ -24,8 +26,25 @@ class LessonScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lessonAsync = ref.watch(lessonDetailProvider(lessonId));
+  ConsumerState<LessonScreen> createState() => _LessonScreenState();
+}
+
+class _LessonScreenState extends ConsumerState<LessonScreen> {
+  @override
+  void dispose() {
+    // Save progress on unmount
+    final payload = UpdateEnrollmentRequest(
+      enrollmentId: widget.courseId, // Assuming enrollmentId is courseId
+      progressStatus: 1, // In progress
+      lessonId: widget.lessonId,
+    );
+    ref.invalidate(updateEnrollmentProvider(payload));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lessonAsync = ref.watch(lessonDetailProvider(widget.lessonId));
 
     return lessonAsync.when(
       data: (lesson) {
@@ -40,9 +59,9 @@ class LessonScreen extends ConsumerWidget {
                     openSheet(
                       context: context,
                       builder: (context) => CourseContentSheet(
-                        courseId: courseId,
-                        currentModuleId: moduleId,
-                        currentLessonId: lessonId,
+                        courseId: widget.courseId,
+                        currentModuleId: widget.moduleId,
+                        currentLessonId: widget.lessonId,
                       ),
                       position: OverlayPosition.start,
                     );
@@ -51,7 +70,7 @@ class LessonScreen extends ConsumerWidget {
                 ),
                 Button(
                   style: ButtonStyle.ghost(),
-                  onPressed: () => context.push('/learn/$courseId'),
+                  onPressed: () => context.push('/learn/${widget.courseId}'),
                   child: const Icon(RadixIcons.cross1),
                 ),
               ],
@@ -96,9 +115,13 @@ class LessonScreen extends ConsumerWidget {
     WidgetRef ref,
     Lesson lesson,
   ) {
-    if (showQuizOnly) {
+    if (widget.showQuizOnly) {
       if (lesson.lessonType == LessonType.quiz) {
-        return QuizView(lesson: lesson, courseId: courseId, moduleId: moduleId);
+        return QuizView(
+          lesson: lesson,
+          courseId: widget.courseId,
+          moduleId: widget.moduleId,
+        );
       }
 
       return Card(
@@ -122,11 +145,15 @@ class LessonScreen extends ConsumerWidget {
 
     switch (lesson.lessonType) {
       case LessonType.markdown:
-        return MdView(lessonId: lessonId);
+        return MdView(lessonId: widget.lessonId);
       case LessonType.video:
-        return VideoView(lessonId: lessonId);
+        return VideoView(lessonId: widget.lessonId);
       case LessonType.quiz:
-        return QuizView(lesson: lesson, courseId: courseId, moduleId: moduleId);
+        return QuizView(
+          lesson: lesson,
+          courseId: widget.courseId,
+          moduleId: widget.moduleId,
+        );
     }
   }
 }
