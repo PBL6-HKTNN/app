@@ -1,11 +1,45 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'dart:io' as io;
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'interceptor.dart';
 import 'exception.dart';
 import '../utils/logger.dart';
 
 class ApiClient {
-  final ApiInterceptor _interceptor = ApiInterceptor();
+  final ApiInterceptor _interceptor;
+  final http.Client _client;
+
+  ApiClient._(this._client) : _interceptor = ApiInterceptor(client: _client);
+
+  /// Creates an [ApiClient]
+  /// Set [allowSelfSigned] to true to allow invalid/self-signed certificates
+  factory ApiClient({bool? allowSelfSigned, http.Client? client}) {
+    final effectiveAllowSelfSigned =
+        allowSelfSigned ??
+        (dotenv.env['ALLOW_SELF_SIGNED_CERTS']?.toLowerCase() == 'true');
+    final http.Client resolvedClient =
+        client ?? _buildClient(effectiveAllowSelfSigned);
+    return ApiClient._(resolvedClient);
+  }
+
+  static http.Client _buildClient(bool allowSelfSigned) {
+    // On web, IOClient / dart:io isn't supported
+    if (kIsWeb) return http.Client();
+
+    if (allowSelfSigned) {
+      final ioc = io.HttpClient();
+      ioc.badCertificateCallback = (cert, host, port) => true;
+      return IOClient(ioc);
+    }
+    return http.Client();
+  }
+
+  Future<void> close() async {
+    _client.close();
+  }
 
   Future<Map<String, dynamic>> get(
     String url, {

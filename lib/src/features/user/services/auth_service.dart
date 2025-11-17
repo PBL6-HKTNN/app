@@ -11,7 +11,10 @@ import '../models/dto/auth/oauth.dart';
 import '../models/dto/auth/reset_password.dart';
 
 class AuthService {
-  final ApiClient _apiClient = ApiClient();
+  final ApiClient _apiClient;
+
+  AuthService({bool? allowSelfSigned})
+    : _apiClient = ApiClient(allowSelfSigned: allowSelfSigned);
 
   Future<ApiRes<AuthRes>> login(LoginDto loginDto) async {
     try {

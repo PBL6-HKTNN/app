@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:codemy_app/src/locale/supported_lang.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:codemy_app/router/app_router.dart';
@@ -10,10 +13,27 @@ import 'src/core/guards/auth_guard.dart';
 import 'src/core/conf/app_config.dart';
 import 'src/features/user/services/google_auth_service.dart';
 
+class _DevHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = super.createHttpClient(context);
+    client.badCertificateCallback = (cert, host, port) => true; // Trust all
+    return client;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await AppConfig.load();
   await GoogleAuthService.initialize();
+  // Enable trusting self-signed certs only in debug/dev if env flag set
+  final allowSelfSigned =
+      (dotenv.env['ALLOW_SELF_SIGNED_CERTS']?.toLowerCase() == 'true');
+  if (!kIsWeb && allowSelfSigned && kDebugMode) {
+    HttpOverrides.global = _DevHttpOverrides();
+    HttpClient.enableTimelineLogging = true;
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -59,6 +79,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return ShadcnApp.router(
       title: 'CodeMy App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorSchemes.lightDefaultColor,
         radius: 0.5,
@@ -110,6 +131,36 @@ class _MyAppState extends ConsumerState<MyApp> {
 //       darkTheme: ThemeData(colorScheme: ColorSchemes.darkBlue, radius: 0.5),
 //       themeMode: ThemeMode.system,
 //       routerConfig: appRouter,
+//     );
+//   }
+// }
+
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:shadcn_flutter/shadcn_flutter.dart';
+// import 'src/features/course/screens/course_list_screen.dart';
+// import 'src/features/course/routes/course_routes.dart';
+
+// void main() {
+//   runApp(const ProviderScope(child: MyApp()));
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ShadcnApp(
+//       title: 'Course Listing App',
+//       themeMode: ThemeMode.light,
+//       onGenerateRoute: generateRoute, // Sử dụng hàm từ course_routes.dart
+//       builder: (context, child) {
+//         return DrawerOverlay(child: child!);
+//       },
+//       home: const CourseListScreen(),
+//       theme: ThemeData(
+//         colorScheme: ColorSchemes.lightDefaultColor,
+//         radius: 0.5,
+//       ),
 //     );
 //   }
 // }

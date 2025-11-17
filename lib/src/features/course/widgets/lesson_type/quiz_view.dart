@@ -1,122 +1,127 @@
+import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/models/entities/quiz/index.dart';
+import 'package:codemy_app/src/features/course/providers/quiz_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
-import 'package:codemy_app/src/features/course/providers/quiz_provider.mock.dart';
-import 'package:codemy_app/src/features/course/widgets/quiz_type/choice_view.dart';
-import 'package:codemy_app/src/features/course/widgets/quiz_type/result_view.dart';
-import 'package:codemy_app/src/features/course/widgets/quiz_type/short_answer_view.dart';
-import 'package:codemy_app/src/features/course/widgets/quiz_type/true_false_view.dart';
 
 class QuizView extends ConsumerWidget {
-  const QuizView({super.key});
+  final Lesson lesson;
+  final String courseId;
+  final String moduleId;
+
+  const QuizView({
+    super.key,
+    required this.lesson,
+    required this.courseId,
+    required this.moduleId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final quizState = ref.watch(quizProvider);
-    final quizNotifier = ref.watch(quizProvider.notifier);
+    final quizAsync = ref.watch(quizByLessonProvider(lesson.id));
 
-    // Check if quiz is completed
-    final isCompleted =
-        quizState.currentQuestionIndex >= quizState.questions.length;
+    return quizAsync.when(
+      data: (quiz) => _buildQuizContent(context, quiz),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(RadixIcons.exclamationTriangle, size: 48),
+              const Gap(12),
+              Text(
+                'Failed to load quiz: $error',
+                style: Theme.of(
+                  context,
+                ).typography.small.copyWith(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (isCompleted) {
-      return const ResultView();
-    }
-
-    final currentQuestion = quizState.questions[quizState.currentQuestionIndex];
-    final progress =
-        (quizState.currentQuestionIndex + 1) / quizState.questions.length;
+  Widget _buildQuizContent(BuildContext context, Quiz quiz) {
+    final questionsCount = quiz.questions.length;
+    final quizUri = Uri(
+      path: '/learn/$courseId/$moduleId/${lesson.id}/quiz',
+      queryParameters: {'quizId': quiz.id},
+    );
 
     return Card(
+      padding: const EdgeInsets.all(24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Progress bar
-          LinearProgressIndicator(value: progress, minHeight: 4),
-
-          // Progress text and marks
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Question ${quizState.currentQuestionIndex + 1} of ${quizState.questions.length}',
-                  style: Theme.of(context).typography.small.copyWith(
-                    color: Theme.of(context).colorScheme.mutedForeground,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(quiz.title, style: Theme.of(context).typography.h4),
+                    const Gap(8),
+                    if ((quiz.description ?? '').isNotEmpty)
+                      Text(
+                        quiz.description!,
+                        style: Theme.of(context).typography.small.copyWith(
+                          color: Theme.of(context).colorScheme.mutedForeground,
+                        ),
+                      ),
+                  ],
                 ),
-                PrimaryBadge(child: Text('${currentQuestion.marks} marks')),
-              ],
-            ),
-          ),
-
-          const Divider(),
-
-          // Question content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Question text
-                  Text(
-                    currentQuestion.questionText,
-                    style: Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const Gap(24),
-
-                  // Question type specific view
-                  _buildQuestionView(currentQuestion),
-                ],
               ),
+              PrimaryBadge(child: Text('$questionsCount questions')),
+            ],
+          ),
+          const Gap(16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            children: [
+              Chip(
+                leading: Icon(RadixIcons.target),
+                child: Text('Passing: ${quiz.passingMarks}'),
+              ),
+              Chip(
+                leading: Icon(LucideIcons.trophy),
+                child: Text('Total Marks: ${quiz.totalMarks}'),
+              ),
+              Chip(
+                leading: Icon(RadixIcons.clock),
+                child: Text('Duration: ${_formatDuration(lesson.duration)}'),
+              ),
+              Chip(
+                leading: Icon(RadixIcons.star),
+                child: Text(
+                  lesson.isPreview ? 'Preview available' : 'Enrolled only',
+                ),
+              ),
+            ],
+          ),
+          const Gap(24),
+          Text(
+            'Ready to attempt this quiz? We will track your answers and score once you begin.',
+            style: Theme.of(context).typography.small.copyWith(
+              color: Theme.of(context).colorScheme.mutedForeground,
             ),
           ),
-
-          const Divider(),
-
-          // Navigation buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const Gap(16),
+          Button(
+            style: ButtonStyle.primary(size: ButtonSize.normal),
+            onPressed: () => context.push(quizUri.toString()),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Previous button
-                if (quizState.currentQuestionIndex > 0)
-                  Button(
-                    style: ButtonStyle.outline(),
-                    leading: const Icon(RadixIcons.arrowLeft),
-                    onPressed: () {
-                      quizNotifier.previousQuestion();
-                    },
-                    child: const Text('Previous'),
-                  )
-                else
-                  const SizedBox.shrink(),
-
-                // Next/Submit button
-                Button(
-                  style: ButtonStyle.primary(),
-                  trailing: Icon(
-                    quizNotifier.isLastQuestion
-                        ? RadixIcons.check
-                        : RadixIcons.arrowRight,
-                  ),
-                  onPressed: quizNotifier.canProceed
-                      ? () {
-                          if (quizNotifier.isLastQuestion) {
-                            quizNotifier.submitQuiz();
-                            // Move to result view
-                            quizNotifier.nextQuestion();
-                          } else {
-                            quizNotifier.nextQuestion();
-                          }
-                        }
-                      : null,
-                  child: Text(quizNotifier.isLastQuestion ? 'Submit' : 'Next'),
-                ),
+                Icon(RadixIcons.play),
+                Gap(8),
+                Text('Start Quiz Attempt'),
               ],
             ),
           ),
@@ -125,17 +130,16 @@ class QuizView extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuestionView(question) {
-    switch (question.type) {
-      case QuizQuestionType.multipleChoice:
-      case QuizQuestionType.singleChoice:
-        return ChoiceView(question: question);
-      case QuizQuestionType.trueFalse:
-        return TrueFalseView(question: question);
-      case QuizQuestionType.shortAnswer:
-        return ShortAnswerView(question: question);
-      default:
-        return const Text('Unknown question type');
+  static String _formatDuration(String raw) {
+    final parts = raw.split(':');
+    if (parts.length == 3) {
+      final hours = int.tryParse(parts[0]) ?? 0;
+      final minutes = int.tryParse(parts[1]) ?? 0;
+      if (hours > 0) {
+        return '${hours}h ${minutes}m';
+      }
+      return '${minutes}m';
     }
+    return raw;
   }
 }

@@ -1,11 +1,10 @@
-import 'package:codemy_app/src/presentation/widgets/lang_btn.dart';
-import 'package:codemy_app/src/presentation/widgets/theme_dropdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import '../providers/auth_providers.dart';
-import '../../../presentation/layouts/main_navigation_bar.dart';
+
 import '../../../locale/index.dart';
+import '../../../presentation/layouts/main_navigation_bar.dart';
+import '../providers/auth_providers.dart';
 
 class UserMenuScreen extends ConsumerWidget {
   const UserMenuScreen({super.key});
@@ -55,108 +54,88 @@ class UserMenuScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
 
-            // User Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Profile Picture & Name
-                    Row(
-                      children: [
-                        if (user.profilePicture.isNotEmpty)
-                          Avatar(
-                            initials: user.name[0].toUpperCase(),
-                            provider: NetworkImage(user.profilePicture),
-                          )
-                        else
-                          Avatar(
-                            initials: user.name[0].toUpperCase(),
-                            size: 64,
+            // User Info Card - Tappable to navigate to profile
+            GestureDetector(
+              onTap: () => context.push('/profile'),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Profile Picture & Name
+                      Row(
+                        children: [
+                          if (user.profilePicture!.isNotEmpty)
+                            Avatar(
+                              initials: user.name[0].toUpperCase(),
+                              provider: NetworkImage(user.profilePicture!),
+                            )
+                          else
+                            Avatar(
+                              initials: user.name[0].toUpperCase(),
+                              size: 64,
+                            ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.name,
+                                  style: Theme.of(context).typography.h3,
+                                ),
+                                const SizedBox(height: 4),
+                                PrimaryBadge(
+                                  child: Text(_getRoleText(user.role)),
+                                ),
+                              ],
+                            ),
                           ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.name,
-                                style: Theme.of(context).typography.h3,
-                              ),
-                              const SizedBox(height: 4),
-                              PrimaryBadge(
-                                child: Text(_getRoleText(user.role)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 8),
-
-            // Button to open Profile screen
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Button.primary(
-                  onPressed: () => context.go('/profile'),
-                  child: const Text('View profile'),
-                ),
-              ],
-            ),
-
             const SizedBox(height: 24),
 
-            // Settings Card
+            // Menu Items
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.settings, style: Theme.of(context).typography.h4),
-                    const SizedBox(height: 16),
-
-                    // Theme Toggle
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                children: [
+                  Button.ghost(
+                    onPressed: () => context.push('/your-courses'),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(BootstrapIcons.lightbulbFill, size: 20),
-                            const SizedBox(width: 12),
-                            const Text('Theme'),
-                          ],
-                        ),
-                        const ThemeDropdown(),
+                        Icon(LucideIcons.bookOpen, size: 20),
+                        const SizedBox(width: 12),
+                        const Text('Your Course'),
+                        const Spacer(),
+                        Icon(LucideIcons.chevronRight, size: 16),
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ),
+                  const Divider(height: 1),
+                  Button.ghost(
+                    onPressed: () => context.push('/settings'),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(LucideIcons.languages, size: 20),
-                            const SizedBox(width: 12),
-                            const Text('Language'),
-                          ],
-                        ),
-                        const LangBtn(),
+                        Icon(LucideIcons.settings, size: 20),
+                        const SizedBox(width: 12),
+                        const Text('Settings'),
+                        const Spacer(),
+                        Icon(LucideIcons.chevronRight, size: 16),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            // Logout Button
+            const SizedBox(height: 24),
             Button.destructive(
               onPressed: authState.isLoading
                   ? null

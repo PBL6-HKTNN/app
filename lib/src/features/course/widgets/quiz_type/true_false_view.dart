@@ -1,17 +1,21 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
-import 'package:codemy_app/src/features/course/providers/quiz_provider.mock.dart';
+import 'package:codemy_app/src/features/course/states/quiz_attempt_state.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class TrueFalseView extends ConsumerWidget {
+class TrueFalseView extends StatelessWidget {
   final QuizQuestion question;
+  final QuizUserAnswer? answer;
+  final void Function(String answerId) onSelect;
 
-  const TrueFalseView({super.key, required this.question});
+  const TrueFalseView({
+    super.key,
+    required this.question,
+    required this.answer,
+    required this.onSelect,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final quizNotifier = ref.watch(quizProvider.notifier);
-
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -22,27 +26,27 @@ class TrueFalseView extends ConsumerWidget {
           ),
         ),
         const Gap(16),
-        ...question.answers.map((answer) {
-          final isSelected = quizNotifier.isAnswerSelected(answer);
+        ...question.answers.map((option) {
+          final optionId = option.id;
+          final isSelected =
+              optionId != null &&
+              (answer?.selectedAnswerIds.contains(optionId) ?? false);
+          final isTrue = option.answerText.toLowerCase() == 'true';
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Button(
               style: isSelected ? ButtonStyle.primary() : ButtonStyle.outline(),
-              onPressed: () {
-                quizNotifier.selectAnswer(answer);
-              },
+              onPressed: optionId == null ? null : () => onSelect(optionId),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    answer.text == 'True'
-                        ? RadixIcons.checkCircled
-                        : RadixIcons.crossCircled,
+                    isTrue ? RadixIcons.checkCircled : RadixIcons.crossCircled,
                   ),
                   const Gap(12),
                   Text(
-                    answer.text,
+                    option.answerText,
                     style: Theme.of(
                       context,
                     ).typography.large.copyWith(fontWeight: FontWeight.w600),

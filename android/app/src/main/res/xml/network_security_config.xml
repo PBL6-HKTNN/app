@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Debug configuration: trust system + user-installed CAs -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    <!-- If you need to scope to a specific host, add a domain-config:
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">YOUR_DEV_HOST</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+    -->
+</network-security-config>

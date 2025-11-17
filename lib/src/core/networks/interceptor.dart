@@ -1,14 +1,18 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../utils/logger.dart';
 import '../utils/persistence.dart';
 import 'exception.dart';
 
 class ApiInterceptor {
+  final http.Client _client;
   final Map<String, String> _defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  ApiInterceptor({http.Client? client}) : _client = client ?? http.Client();
 
   Future<http.Response> interceptRequest(
     String url,
@@ -32,12 +36,12 @@ class ApiInterceptor {
       http.Response response;
       switch (method.toUpperCase()) {
         case 'GET':
-          response = await http
+          response = await _client
               .get(Uri.parse(url), headers: mergedHeaders)
               .timeout(timeout);
           break;
         case 'POST':
-          response = await http
+          response = await _client
               .post(
                 Uri.parse(url),
                 headers: mergedHeaders,
@@ -46,7 +50,7 @@ class ApiInterceptor {
               .timeout(timeout);
           break;
         case 'PUT':
-          response = await http
+          response = await _client
               .put(
                 Uri.parse(url),
                 headers: mergedHeaders,
@@ -55,7 +59,7 @@ class ApiInterceptor {
               .timeout(timeout);
           break;
         case 'DELETE':
-          response = await http
+          response = await _client
               .delete(Uri.parse(url), headers: mergedHeaders)
               .timeout(timeout);
           break;

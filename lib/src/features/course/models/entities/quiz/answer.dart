@@ -1,13 +1,23 @@
-import 'package:codemy_app/src/core/models/entity.dart';
-
-class Answer extends EntityModel {
-  final String text;
+class Answer {
+  final String? id;
+  final String answerText;
   final bool isCorrect;
 
-  Answer({
-    required this.text,
-    required this.isCorrect,
-    required super.id,
-    required super.createdAt,
-  });
+  Answer({this.id, required this.answerText, required this.isCorrect});
+
+  factory Answer.fromJson(Map<String, dynamic> json) {
+    return Answer(
+      id: json['answerId'] as String?,
+      answerText: json['answerText'] as String? ?? '',
+      isCorrect: json['isCorrect'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'answerId': id,
+      'answerText': answerText,
+      'isCorrect': isCorrect,
+    };
+  }
 }

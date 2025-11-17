@@ -1,11 +1,21 @@
+import 'dart:async';
+
 import 'package:codemy_app/src/core/utils/logger.dart';
+import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:video_player/video_player.dart';
-import 'package:codemy_app/src/features/course/providers/lesson_provider.mock.dart';
 
 class VideoView extends ConsumerStatefulWidget {
-  const VideoView({super.key});
+  final Lesson? lesson;
+  final String? lessonId;
+
+  const VideoView({super.key, this.lesson, this.lessonId})
+    : assert(
+        lesson != null || lessonId != null,
+        'Either lesson or lessonId must be provided',
+      );
 
   @override
   ConsumerState<VideoView> createState() => _VideoViewState();
@@ -13,103 +23,134 @@ class VideoView extends ConsumerStatefulWidget {
 
 class _VideoViewState extends ConsumerState<VideoView> {
   VideoPlayerController? _controller;
-  bool _isInitialized = false;
+  bool _initializing = false;
   bool _isPlaying = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
-  late final LessonNotifier _lessonNotifier;
+  double _progress = 0.0;
+  String? _errorMessage;
+  String? _currentContentUrl;
 
   @override
   void initState() {
     super.initState();
-    _lessonNotifier = ref.read(lessonProvider.notifier);
-    _initializeVideo();
+    // Video initialization will happen in build when lesson is available
   }
 
   @override
   void dispose() {
+    _controller?.removeListener(_onVideoPositionChanged);
     _controller?.dispose();
-    // Mock unmount trigger for progress saving
-    _lessonNotifier.saveProgress();
     super.dispose();
   }
 
-  Future<void> _initializeVideo() async {
+  @override
+  void didUpdateWidget(VideoView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset video if lesson changed
+    if (oldWidget.lesson?.id != widget.lesson?.id ||
+        oldWidget.lessonId != widget.lessonId) {
+      _resetVideo();
+    }
+  }
+
+  void _resetVideo() {
+    setState(() {
+      _controller?.removeListener(_onVideoPositionChanged);
+      _controller?.dispose();
+      _controller = null;
+      _initializing = false;
+      _isPlaying = false;
+      _currentPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+      _progress = 0.0;
+      _errorMessage = null;
+      _currentContentUrl = null;
+    });
+  }
+
+  Future<void> _initializeVideo(String contentUrl) async {
+    setState(() {
+      _initializing = true;
+      _errorMessage = null;
+      _currentContentUrl = contentUrl;
+    });
+
+    if (contentUrl.isEmpty) {
+      setState(() {
+        _errorMessage = 'Video content is not available yet.';
+        _initializing = false;
+      });
+      return;
+    }
+
+    Logger.info('Initializing video with URL: $contentUrl', tag: 'VIDEO_VIEW');
+
     try {
-      // Try local asset first
-      _controller = VideoPlayerController.asset('assets/test/sample_video.mp4');
-      await _controller!.initialize();
+      final uri = Uri.parse(contentUrl);
+      Logger.info('Parsed URI: ${uri.scheme} - ${uri.path}', tag: 'VIDEO_VIEW');
+
+      if (uri.scheme == 'asset') {
+        _controller = VideoPlayerController.asset(uri.path);
+      } else if (uri.scheme.startsWith('http')) {
+        _controller = VideoPlayerController.networkUrl(uri);
+      } else {
+        // Handle file:// or other schemes
+        _controller = VideoPlayerController.networkUrl(uri);
+      }
+
+      Logger.info('Controller created, initializing...', tag: 'VIDEO_VIEW');
+      await _controller!.initialize().timeout(const Duration(seconds: 10));
+
+      if (!_controller!.value.isInitialized) {
+        throw Exception('Video controller failed to initialize');
+      }
+
+      if (!mounted) return;
+
+      _totalDuration = _controller!.value.duration;
+      Logger.info(
+        'Video initialized successfully. Duration: $_totalDuration, Aspect ratio: ${_controller!.value.aspectRatio}',
+        tag: 'VIDEO_VIEW',
+      );
+
       _controller!.addListener(_onVideoPositionChanged);
 
       setState(() {
-        _isInitialized = true;
-        _totalDuration = _controller!.value.duration;
+        _initializing = false;
       });
-
-      // Restore saved progress
-      _restoreVideoPosition();
-    } catch (e) {
-      Logger.error('Local video not found, trying network video: $e');
-      // Fallback to network video for demo
-      try {
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          ),
-        );
-        await _controller!.initialize();
-        _controller!.addListener(_onVideoPositionChanged);
-
-        setState(() {
-          _isInitialized = true;
-          _totalDuration = _controller!.value.duration;
-        });
-
-        _restoreVideoPosition();
-      } catch (networkError) {
-        Logger.error('Network video failed: $networkError');
-        setState(() {
-          _isInitialized = true; // Show error state
-        });
-      }
+    } catch (error, stackTrace) {
+      Logger.error(
+        'Failed to initialize video',
+        tag: 'LESSON_VIDEO',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      setState(() {
+        _errorMessage = 'Failed to load video content: $error';
+        _initializing = false;
+      });
     }
   }
 
   void _onVideoPositionChanged() {
-    if (_controller != null && _controller!.value.isInitialized) {
-      setState(() {
-        _currentPosition = _controller!.value.position;
-        _isPlaying = _controller!.value.isPlaying;
-      });
+    if (!mounted || _controller == null || !_controller!.value.isInitialized) {
+      return;
+    }
 
-      // Update progress and current position in provider
-      final progress = _totalDuration.inMilliseconds > 0
-          ? _currentPosition.inMilliseconds / _totalDuration.inMilliseconds
+    setState(() {
+      _currentPosition = _controller!.value.position;
+      _isPlaying = _controller!.value.isPlaying;
+      final totalMillis = _totalDuration.inMilliseconds;
+      _progress = totalMillis > 0
+          ? (_currentPosition.inMilliseconds / totalMillis).clamp(0.0, 1.0)
           : 0.0;
-      _lessonNotifier.setProgress(progress.clamp(0.0, 1.0));
-      _lessonNotifier.setCurrentPosition(_currentPosition);
-    }
-  }
-
-  void _restoreVideoPosition() {
-    if (_controller != null && _controller!.value.isInitialized) {
-      final lessonState = ref.read(lessonProvider);
-
-      // Use currentPosition if available, otherwise fall back to progress calculation
-      final targetPosition =
-          lessonState.currentPosition ??
-          (_totalDuration * lessonState.currentProgress);
-
-      if (targetPosition > Duration.zero) {
-        _controller!.seekTo(targetPosition);
-      }
-    }
+    });
   }
 
   void _togglePlayPause() {
     if (_controller == null) return;
-
-    if (_isPlaying) {
+    if (_controller!.value.isPlaying) {
       _controller!.pause();
     } else {
       _controller!.play();
@@ -124,54 +165,130 @@ class _VideoViewState extends ConsumerState<VideoView> {
 
   @override
   Widget build(BuildContext context) {
-    final lessonState = ref.watch(lessonProvider);
+    if (widget.lessonId != null) {
+      final lessonAsync = ref.watch(lessonDetailProvider(widget.lessonId!));
 
-    if (!_isInitialized) {
+      return lessonAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) {
+          Logger.error(
+            'Failed to load lesson for video',
+            tag: 'VIDEO_VIEW',
+            error: error,
+          );
+          return Center(
+            child: Text(
+              'Failed to load lesson content.',
+              style: Theme.of(
+                context,
+              ).typography.small.copyWith(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+          );
+        },
+        data: (lesson) {
+          final contentUrl = lesson.contentUrl;
+          if (contentUrl == null || contentUrl.isEmpty) {
+            return const Center(child: Text('Video content not available'));
+          }
+
+          if (_controller == null && !_initializing) {
+            _initializeVideo(contentUrl);
+          }
+
+          return _buildVideoContent(contentUrl);
+        },
+      );
+    }
+
+    // Fallback to direct lesson if provided
+    if (widget.lesson == null) {
+      return const Center(child: Text('Lesson not available'));
+    }
+
+    if (widget.lesson!.contentUrl == null ||
+        widget.lesson!.contentUrl!.isEmpty) {
+      return const Center(child: Text('Video content not available'));
+    }
+
+    // Initialize video if not already done
+    if (_controller == null && !_initializing) {
+      _initializeVideo(widget.lesson!.contentUrl!);
+    }
+
+    return _buildVideoContent(widget.lesson!.contentUrl!);
+  }
+
+  Widget _buildVideoContent(String contentUrl) {
+    if (_initializing) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_controller == null) {
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _errorMessage!,
+              style: Theme.of(
+                context,
+              ).typography.small.copyWith(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const Gap(8),
+            Text(
+              'URL: ${_currentContentUrl ?? contentUrl}',
+              style: Theme.of(context).typography.xSmall.copyWith(
+                color: Theme.of(context).colorScheme.mutedForeground,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: Text('Video not available'));
     }
+
+    // Ensure aspect ratio is valid
+    final aspectRatio = _controller!.value.aspectRatio;
+    final validAspectRatio = aspectRatio > 0 && aspectRatio.isFinite
+        ? aspectRatio
+        : 16 / 9;
+
+    Logger.info(
+      'Rendering video with aspect ratio: $validAspectRatio',
+      tag: 'VIDEO_VIEW',
+    );
 
     return Card(
       child: Column(
         children: [
-          // Video player
           AspectRatio(
-            aspectRatio: _controller!.value.aspectRatio,
+            aspectRatio: validAspectRatio,
             child: VideoPlayer(_controller!),
           ),
-
-          // Progress bar
-          LinearProgressIndicator(
-            value: lessonState.currentProgress,
-            minHeight: 4,
-          ),
-
-          // Controls
+          LinearProgressIndicator(value: _progress, minHeight: 4),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Progress text
                 Text(
-                  'Progress: ${(lessonState.currentProgress * 100).toStringAsFixed(1)}%',
+                  'Progress: ${(_progress * 100).toStringAsFixed(1)}%',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const Gap(8),
-
-                // Time display
                 Text(
                   '${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}',
                   style: const TextStyle(fontSize: 12),
                 ),
                 const Gap(16),
-
-                // Play/Pause button
                 Button(
                   style: ButtonStyle.primary(),
                   onPressed: _togglePlayPause,

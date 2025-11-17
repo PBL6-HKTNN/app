@@ -1,9 +1,10 @@
-import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+
+import '../../features/user/providers/auth_providers.dart';
 import '../../locale/index.dart';
 import '../layouts/main_navigation_bar.dart';
-import '../../features/user/providers/auth_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -53,14 +54,8 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           Button.outline(
                             child: Text(l10n.browseCourses),
-                            onPressed: () {},
-                          ),
-                          Button.primary(
-                            child: Text(l10n.startLearning),
                             onPressed: () {
-                              context.go(
-                                '/course/1/learn/2/3?lessonType=video',
-                              );
+                              context.push('/courses');
                             },
                           ),
                         ],
@@ -68,42 +63,6 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Text(l10n.features, style: Theme.of(context).typography.large),
-              const SizedBox(height: 16),
-
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
-                children: [
-                  _buildFeatureCard(
-                    l10n.interactiveCoding,
-                    l10n.interactiveCodingDescription,
-                    Icons.code,
-                  ),
-                  _buildFeatureCard(
-                    l10n.progressTracking,
-                    l10n.progressTrackingDescription,
-                    Icons.trending_up,
-                  ),
-                  _buildFeatureCard(
-                    l10n.community,
-                    l10n.communityDescription,
-                    Icons.people,
-                  ),
-                  _buildFeatureCard(
-                    l10n.certificates,
-                    l10n.certificatesDescription,
-                    Icons.workspace_premium,
-                  ),
-                ],
               ),
 
               const SizedBox(height: 24),

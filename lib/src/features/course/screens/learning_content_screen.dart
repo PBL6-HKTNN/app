@@ -1,105 +1,106 @@
+import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
+import 'package:codemy_app/src/features/course/models/dto/course_content.dart';
+import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/models/entities/module.dart';
+import 'package:codemy_app/src/features/course/providers/course_content_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
-import 'package:codemy_app/src/features/course/models/entities/module.dart';
-import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
 
-// Mock course data
-final mockCourseData = [
-  Module(
-    id: 'module-1',
-    title: 'Introduction to Programming',
-    duration: const Duration(minutes: 30),
-    numLessons: 3,
-    order: 1,
-    createdAt: DateTime.now(),
-    lessons: [
-      Lesson(
-        id: 'lesson-1',
-        title: 'What is Programming?',
-        duration: '10 min',
-        lessonType: LessonType.markdown,
-        orderIndex: 1,
-        isPreviewable: true,
-        createdAt: DateTime.now(),
-      ),
-      Lesson(
-        id: 'lesson-2',
-        title: 'Setting up Environment',
-        duration: '15 min',
-        lessonType: LessonType.video,
-        orderIndex: 2,
-        isPreviewable: true,
-        createdAt: DateTime.now(),
-      ),
-      Lesson(
-        id: 'lesson-3',
-        title: 'Basic Concepts Quiz',
-        duration: '5 min',
-        lessonType: LessonType.quiz,
-        orderIndex: 3,
-        isPreviewable: false,
-        createdAt: DateTime.now(),
-      ),
-    ],
-  ),
-  Module(
-    id: 'module-2',
-    title: 'Variables and Data Types',
-    duration: const Duration(minutes: 45),
-    numLessons: 3,
-    order: 2,
-    createdAt: DateTime.now(),
-    lessons: [
-      Lesson(
-        id: 'lesson-4',
-        title: 'Variables',
-        duration: '12 min',
-        lessonType: LessonType.markdown,
-        orderIndex: 1,
-        isPreviewable: true,
-        createdAt: DateTime.now(),
-      ),
-      Lesson(
-        id: 'lesson-5',
-        title: 'Data Types',
-        duration: '18 min',
-        lessonType: LessonType.video,
-        orderIndex: 2,
-        isPreviewable: true,
-        createdAt: DateTime.now(),
-      ),
-      Lesson(
-        id: 'lesson-6',
-        title: 'Practice Quiz',
-        duration: '15 min',
-        lessonType: LessonType.quiz,
-        orderIndex: 3,
-        isPreviewable: false,
-        createdAt: DateTime.now(),
-      ),
-    ],
-  ),
-];
-
-class LearningContentScreen extends ConsumerStatefulWidget {
+class LearningContentScreen extends ConsumerWidget {
   final String courseId;
+  final String? initialModuleId;
+  final String? initialLessonId;
 
-  const LearningContentScreen({super.key, required this.courseId});
+  const LearningContentScreen({
+    super.key,
+    required this.courseId,
+    this.initialModuleId,
+    this.initialLessonId,
+  });
 
   @override
-  ConsumerState<LearningContentScreen> createState() =>
-      _LearningContentScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final courseContent = ref.watch(courseContentProvider(courseId));
+
+    return courseContent.when(
+      data: (content) => _LearningContentView(
+        courseId: courseId,
+        content: content,
+        initialModuleId: initialModuleId,
+        initialLessonId: initialLessonId,
+      ),
+      loading: () =>
+          const Scaffold(child: Center(child: CircularProgressIndicator())),
+      error: (error, _) => Scaffold(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(RadixIcons.exclamationTriangle, size: 40),
+              const Gap(12),
+              Text(
+                'Failed to load course content',
+                style: Theme.of(
+                  context,
+                ).typography.small.copyWith(color: Colors.red),
+              ),
+              const Gap(8),
+              Text(
+                error.toString(),
+                style: Theme.of(context).typography.xSmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _LearningContentScreenState extends ConsumerState<LearningContentScreen> {
-  late List<TreeNode<dynamic>> treeItems;
+class _LearningContentView extends StatefulWidget {
+  final String courseId;
+  final CourseContent content;
+  final String? initialModuleId;
+  final String? initialLessonId;
+
+  const _LearningContentView({
+    required this.courseId,
+    required this.content,
+    this.initialModuleId,
+    this.initialLessonId,
+  });
+
+  @override
+  State<_LearningContentView> createState() => _LearningContentViewState();
+}
+
+class _LearningContentViewState extends State<_LearningContentView> {
+  late List<TreeNode<dynamic>> _treeItems;
 
   @override
   void initState() {
     super.initState();
-    treeItems = _buildTreeNodes();
+    _treeItems = _buildTreeNodes(
+      widget.content.modules,
+      selectedModuleId: widget.initialModuleId,
+      selectedLessonId: widget.initialLessonId,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _LearningContentView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content.modules != widget.content.modules ||
+        oldWidget.initialModuleId != widget.initialModuleId ||
+        oldWidget.initialLessonId != widget.initialLessonId) {
+      _treeItems = _buildTreeNodes(
+        widget.content.modules,
+        selectedModuleId: widget.initialModuleId,
+        selectedLessonId: widget.initialLessonId,
+      );
+    }
   }
 
   @override
@@ -111,9 +112,7 @@ class _LearningContentScreenState extends ConsumerState<LearningContentScreen> {
           leading: [
             Button(
               style: ButtonStyle.ghost(),
-              onPressed: () {
-                context.pop();
-              },
+              onPressed: () => context.pop(),
               child: const Icon(RadixIcons.arrowLeft),
             ),
           ],
@@ -124,41 +123,39 @@ class _LearningContentScreenState extends ConsumerState<LearningContentScreen> {
         child: TreeView<dynamic>(
           shrinkWrap: true,
           recursiveSelection: false,
-          nodes: treeItems,
+          nodes: _treeItems,
           branchLine: BranchLine.path,
-          onSelectionChanged: TreeView.defaultSelectionHandler(treeItems, (
+          onSelectionChanged: TreeView.defaultSelectionHandler(_treeItems, (
             value,
           ) {
             setState(() {
-              treeItems = value;
+              _treeItems = value;
             });
           }),
           builder: (context, node) {
             final data = node.data;
             if (data is Module) {
               return TreeItemView(
-                onPressed: () {
-                  // Module selection - could expand/collapse
-                },
+                onPressed: () {},
                 leading: Icon(
                   node.expanded
                       ? BootstrapIcons.folder2Open
                       : BootstrapIcons.folder2,
                 ),
-                onExpand: TreeView.defaultItemExpandHandler(treeItems, node, (
+                onExpand: TreeView.defaultItemExpandHandler(_treeItems, node, (
                   value,
                 ) {
                   setState(() {
-                    treeItems = value;
+                    _treeItems = value;
                   });
                 }),
                 child: Text(data.title),
               );
-            } else if (data is Lesson) {
+            }
+
+            if (data is Lesson) {
               return TreeItemView(
-                onPressed: () {
-                  _navigateToLesson(context, data);
-                },
+                onPressed: () => _navigateToLesson(context, data),
                 leading: _getLessonIcon(data.lessonType),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,24 +172,35 @@ class _LearningContentScreenState extends ConsumerState<LearningContentScreen> {
                 ),
               );
             }
-            return TreeItemView(child: Text('Unknown item'));
+
+            return TreeItemView(child: Text('${node.data}'));
           },
         ),
       ),
     );
   }
 
-  List<TreeNode<dynamic>> _buildTreeNodes() {
-    return mockCourseData.map((module) {
+  List<TreeNode<dynamic>> _buildTreeNodes(
+    List<Module> modules, {
+    String? selectedModuleId,
+    String? selectedLessonId,
+  }) {
+    return modules.map((module) {
+      final lessons = module.lessons ?? <Lesson>[];
+      final isModuleSelected = module.id == selectedModuleId;
       return TreeItem<dynamic>(
         data: module,
-        expanded: true, // Modules start expanded
-        children: module.lessons.map((lesson) {
-          return TreeItem<dynamic>(
-            data: lesson,
-            children: const [], // Lessons are leaf nodes
-          );
-        }).toList(),
+        expanded: true,
+        selected: isModuleSelected,
+        children: lessons
+            .map(
+              (lesson) => TreeItem<dynamic>(
+                data: lesson,
+                children: const [],
+                selected: lesson.id == selectedLessonId,
+              ),
+            )
+            .toList(),
       );
     }).toList();
   }
@@ -220,9 +228,7 @@ class _LearningContentScreenState extends ConsumerState<LearningContentScreen> {
   }
 
   void _navigateToLesson(BuildContext context, Lesson lesson) {
-    // Navigate to the lesson
-    context.go(
-      '/course/${widget.courseId}/learn/${lesson.id.split('-')[0]}/${lesson.id}',
-    );
+    final moduleId = lesson.moduleId;
+    context.go('/learn/${widget.courseId}/$moduleId/${lesson.id}');
   }
 }
