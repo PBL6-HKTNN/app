@@ -1,13 +1,13 @@
 import 'package:codemy_app/src/core/models/entity.dart';
 
 class Enrollment extends EntityModel {
-  final String enrollmentId;
+  final String? enrollmentId;
   final int progressStatus;
   final int enrollmentStatus;
   final String? lessonId;
-  final DateTime completionDate;
-  final String certificateUrl;
-  final DateTime certificateExpiryDate;
+  final DateTime? completionDate;
+  final String? certificateUrl;
+  final DateTime? certificateExpiryDate;
 
   Enrollment(
     this.enrollmentId,
@@ -25,28 +25,34 @@ class Enrollment extends EntityModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'createdAt': createdAt,
+      'createdAt': createdAt?.toIso8601String(),
       'enrollmentId': enrollmentId,
       'progressStatus': progressStatus,
       'enrollmentStatus': enrollmentStatus,
       'lessonId': lessonId,
-      'completionDate': completionDate,
+      'completionDate': completionDate?.toIso8601String(),
       'certificateUrl': certificateUrl,
-      'certificateExpiryDate': certificateExpiryDate,
+      'certificateExpiryDate': certificateExpiryDate?.toIso8601String(),
     };
   }
 
   factory Enrollment.fromJson(Map<String, dynamic> json) {
     return Enrollment(
-      json['enrollmentId'] as String,
+      json['enrollmentId'] as String?,
       json['progressStatus'] as int,
       json['lessonId'] as String?,
-      DateTime.parse(json['completionDate'] as String),
-      json['certificateUrl'] as String,
-      DateTime.parse(json['certificateExpiryDate'] as String),
+      json['completionDate'] != null
+          ? DateTime.parse(json['completionDate'] as String)
+          : null,
+      json['certificateUrl'] as String?,
+      json['certificateExpiryDate'] != null
+          ? DateTime.parse(json['certificateExpiryDate'] as String)
+          : null,
       json['enrollmentStatus'] as int,
       id: json['id'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
     );
   }
 }

@@ -10,7 +10,7 @@ import '../providers/enrollment_provider.dart';
 import '../providers/wishlist_provider.dart';
 import '../widgets/course_content_view.dart';
 
-class CourseDetailScreen extends ConsumerWidget {
+class CourseDetailScreen extends ConsumerStatefulWidget {
   final String courseId;
   final String source;
 
@@ -21,9 +21,47 @@ class CourseDetailScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final contentAsync = ref.watch(courseContentProvider(courseId));
-    final enrollmentAsync = ref.watch(courseEnrollmentProvider(courseId));
+  ConsumerState<CourseDetailScreen> createState() => _CourseDetailScreenState();
+}
+
+class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Refresh data when screen is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(courseContentProvider(widget.courseId));
+      ref.invalidate(courseEnrollmentProvider(widget.courseId));
+      ref.invalidate(wishlistProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Note: Provider invalidation removed from dispose to avoid unsafe ref usage
+    // AutoDispose providers will clean up automatically
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh data when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(courseEnrollmentProvider(widget.courseId));
+      ref.invalidate(wishlistProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contentAsync = ref.watch(courseContentProvider(widget.courseId));
+    final enrollmentAsync = ref.watch(
+      courseEnrollmentProvider(widget.courseId),
+    );
     final wishlistAsync = ref.watch(wishlistProvider);
 
     return contentAsync.when(
@@ -47,7 +85,8 @@ class CourseDetailScreen extends ConsumerWidget {
         );
 
         final isInWishlist = wishlistAsync.when(
-          data: (wishlist) => wishlist.any((item) => item.courseId == courseId),
+          data: (wishlist) =>
+              wishlist.any((item) => item.courseId == widget.courseId),
           loading: () => false,
           error: (_, __) => false,
         );
@@ -205,7 +244,8 @@ class CourseDetailScreen extends ConsumerWidget {
                   // Action buttons based on enrollment status
                   if (isEnrolled)
                     Button.primary(
-                      onPressed: () => context.push('/learn/$courseId'),
+                      onPressed: () =>
+                          context.push('/learn/${widget.courseId}'),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -318,7 +358,7 @@ class CourseDetailScreen extends ConsumerWidget {
 
   void _handleEnrollAction(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(enrollCourseProvider(courseId).future);
+      await ref.read(enrollCourseProvider(widget.courseId).future);
       if (context.mounted) {
         _showSuccessDialog(
           context,
@@ -326,7 +366,7 @@ class CourseDetailScreen extends ConsumerWidget {
           'You have successfully enrolled in this course!',
         );
         // Refresh enrollment status
-        ref.invalidate(courseEnrollmentProvider(courseId));
+        ref.invalidate(courseEnrollmentProvider(widget.courseId));
       }
     } catch (error) {
       if (context.mounted) {
@@ -342,7 +382,7 @@ class CourseDetailScreen extends ConsumerWidget {
   ) async {
     try {
       if (isInWishlist) {
-        await ref.read(removeFromWishlistProvider(courseId).future);
+        await ref.read(removeFromWishlistProvider(widget.courseId).future);
         if (context.mounted) {
           _showSuccessDialog(
             context,
@@ -351,7 +391,7 @@ class CourseDetailScreen extends ConsumerWidget {
           );
         }
       } else {
-        await ref.read(addToWishlistProvider(courseId).future);
+        await ref.read(addToWishlistProvider(widget.courseId).future);
         if (context.mounted) {
           _showSuccessDialog(
             context,

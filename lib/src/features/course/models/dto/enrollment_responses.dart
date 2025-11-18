@@ -1,3 +1,4 @@
+import 'package:codemy_app/src/features/course/models/entities/enrollment.dart';
 import 'package:decimal/decimal.dart';
 
 class JoinedCourse {
@@ -32,11 +33,19 @@ class JoinedCourse {
 class EnrollmentCheckResponse {
   final bool success;
   final String? message;
-  EnrollmentCheckResponse({required this.success, this.message});
+  final Enrollment? enrollment;
+  EnrollmentCheckResponse({
+    required this.success,
+    this.message,
+    this.enrollment,
+  });
   factory EnrollmentCheckResponse.fromJson(Map<String, dynamic> json) {
     return EnrollmentCheckResponse(
       success: json['success'] as bool,
       message: json['message'] as String?,
+      enrollment: json['enrollment'] != null
+          ? Enrollment.fromJson(json['enrollment'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

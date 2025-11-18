@@ -30,21 +30,66 @@ class LessonScreen extends ConsumerStatefulWidget {
 }
 
 class _LessonScreenState extends ConsumerState<LessonScreen> {
+  /// Saves lesson progress using the proper enrollment ID
+  void _saveProgress({int progressStatus = 1}) {
+    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
+    enrollmentAsync.whenData((enrollmentCheck) {
+      if (enrollmentCheck.success && enrollmentCheck.enrollment != null) {
+        final payload = UpdateEnrollmentRequest(
+          enrollmentId: enrollmentCheck.enrollment!.id,
+          progressStatus: progressStatus,
+          lessonId: widget.lessonId,
+        );
+        ref.read(updateEnrollmentProvider(payload));
+      }
+    });
+  }
+
   @override
   void dispose() {
-    // Save progress on unmount
-    final payload = UpdateEnrollmentRequest(
-      enrollmentId: widget.courseId, // Assuming enrollmentId is courseId
-      progressStatus: 1, // In progress
-      lessonId: widget.lessonId,
-    );
-    ref.invalidate(updateEnrollmentProvider(payload));
+    // Save progress on unmount using proper enrollment ID
+    _saveProgress(progressStatus: 1); // In progress
     super.dispose();
+  }
+
+  Future<void> _confirmExit(BuildContext context) async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Exit Lesson?'),
+          content: const Text(
+            'Your progress will be saved. Are you sure you want to exit?',
+          ),
+          actions: [
+            Button(
+              style: ButtonStyle.ghost(),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            Button(
+              style: ButtonStyle.primary(),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldExit == true) {
+      _saveProgress(progressStatus: 1);
+      if (context.mounted) {
+        context.push('/learn/${widget.courseId}');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final lessonAsync = ref.watch(lessonDetailProvider(widget.lessonId));
+    // Ensure enrollment is loaded for progress tracking
+    ref.watch(courseEnrollmentProvider(widget.courseId));
 
     return lessonAsync.when(
       data: (lesson) {
@@ -70,40 +115,45 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                 ),
                 Button(
                   style: ButtonStyle.ghost(),
-                  onPressed: () => context.push('/learn/${widget.courseId}'),
+                  onPressed: () => _confirmExit(context),
                   child: const Icon(RadixIcons.cross1),
                 ),
               ],
             ),
           ],
-          child: Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: _buildLessonContent(context, ref, lesson),
+          child: DrawerOverlay(
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: _buildLessonContent(context, ref, lesson),
+            ),
           ),
         );
       },
-      loading: () =>
-          const Scaffold(child: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(
+        child: DrawerOverlay(child: Center(child: CircularProgressIndicator())),
+      ),
       error: (error, _) => Scaffold(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(RadixIcons.exclamationTriangle, size: 40),
-              const Gap(12),
-              Text(
-                'Failed to load lesson',
-                style: Theme.of(
-                  context,
-                ).typography.small.copyWith(color: Colors.red),
-              ),
-              const Gap(8),
-              Text(
-                error.toString(),
-                style: Theme.of(context).typography.xSmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
+        child: DrawerOverlay(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(RadixIcons.exclamationTriangle, size: 40),
+                const Gap(12),
+                Text(
+                  'Failed to load lesson',
+                  style: Theme.of(
+                    context,
+                  ).typography.small.copyWith(color: Colors.red),
+                ),
+                const Gap(8),
+                Text(
+                  error.toString(),
+                  style: Theme.of(context).typography.xSmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -32,15 +32,25 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
 }
 
 class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
+  /// Saves quiz progress using the proper enrollment ID
+  void _saveProgress({int progressStatus = 1}) {
+    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
+    enrollmentAsync.whenData((enrollmentCheck) {
+      if (enrollmentCheck.success && enrollmentCheck.enrollment != null) {
+        final payload = UpdateEnrollmentRequest(
+          enrollmentId: enrollmentCheck.enrollment!.id,
+          progressStatus: progressStatus,
+          lessonId: widget.lessonId,
+        );
+        ref.read(updateEnrollmentProvider(payload));
+      }
+    });
+  }
+
   @override
   void dispose() {
-    // Save progress on unmount
-    final payload = UpdateEnrollmentRequest(
-      enrollmentId: widget.courseId, // Assuming enrollmentId is courseId
-      progressStatus: 1, // In progress
-      lessonId: widget.lessonId,
-    );
-    ref.invalidate(updateEnrollmentProvider(payload));
+    // Save progress on unmount using proper enrollment ID
+    _saveProgress(progressStatus: 1); // In progress
     super.dispose();
   }
 
@@ -75,7 +85,7 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
           leading: [
             Button(
               style: ButtonStyle.ghost(),
-              onPressed: () => _goBack(context),
+              onPressed: () => _confirmExit(context),
               child: const Icon(RadixIcons.arrowLeft),
             ),
           ],
@@ -324,6 +334,37 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
 
     if (shouldSubmit == true) {
       await controller.submitQuiz();
+    }
+  }
+
+  Future<void> _confirmExit(BuildContext context) async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Exit Quiz?'),
+          content: const Text(
+            'Your progress will be saved. Are you sure you want to exit?',
+          ),
+          actions: [
+            Button(
+              style: ButtonStyle.ghost(),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            Button(
+              style: ButtonStyle.primary(),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldExit == true) {
+      _saveProgress(progressStatus: 1);
+      _goBack(context);
     }
   }
 

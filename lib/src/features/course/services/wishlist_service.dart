@@ -14,6 +14,14 @@ class WishlistService {
   Future<ApiRes<List<WishlistedCourse>>> getWishlist() async {
     try {
       final response = await _apiClient.get(ApiRoutes.WISHLIST.list);
+      if (response['status'] == 400) {
+        return ApiRes<List<WishlistedCourse>>(
+          status: 400,
+          data: [],
+          error: null,
+          isSuccess: true,
+        );
+      }
       return ApiRes<List<WishlistedCourse>>.fromJson(
         response,
         (data) => (data as List<dynamic>)

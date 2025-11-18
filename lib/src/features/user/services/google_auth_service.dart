@@ -1,8 +1,8 @@
 import 'package:codemy_app/src/core/conf/app_config.dart';
 import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/google_oauth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthService {
   static GoogleSignIn? _googleSignIn;
@@ -25,6 +25,12 @@ class GoogleAuthService {
       'GoogleAuthService initialized ${AppConfig.instance.googleClientId}, ${AppConfig.instance.googleServerClientId}',
       tag: 'GOOGLE_AUTH',
     );
+  }
+
+  /// For testing: Replace the GoogleSignIn instance with a mock
+  @visibleForTesting
+  static void setMockGoogleSignIn(GoogleSignIn mockGoogleSignIn) {
+    _googleSignIn = mockGoogleSignIn;
   }
 
   /// Stream of authentication state changes
