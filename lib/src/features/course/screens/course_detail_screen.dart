@@ -41,10 +41,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    // Invalidate providers when screen is disposed to ensure fresh data on next visit
-    ref.invalidate(courseContentProvider(widget.courseId));
-    ref.invalidate(courseEnrollmentProvider(widget.courseId));
-    ref.invalidate(wishlistProvider);
+    // Note: Provider invalidation removed from dispose to avoid unsafe ref usage
+    // AutoDispose providers will clean up automatically
     super.dispose();
   }
 

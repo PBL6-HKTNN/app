@@ -29,12 +29,12 @@ void main() {
         final result = validatePassword(password);
         expect(
           result,
-          isNotNull,
+          'Password must be at least 8 characters long.',
           reason: 'Password "$password" should be invalid (too short)',
         );
         expect(
           result,
-          contains('8 characters'),
+          'Password must be at least 8 characters long.',
           reason: 'Error message should mention minimum length',
         );
       }
@@ -52,12 +52,12 @@ void main() {
         final result = validatePassword(password);
         expect(
           result,
-          isNotNull,
+          'Password must contain at least one uppercase letter and one special character.',
           reason: 'Password "$password" should be invalid (no uppercase)',
         );
         expect(
           result,
-          contains('uppercase'),
+          'Password must contain at least one uppercase letter and one special character.',
           reason: 'Error message should mention uppercase requirement',
         );
       }
@@ -75,12 +75,12 @@ void main() {
         final result = validatePassword(password);
         expect(
           result,
-          isNotNull,
+          'Password must contain at least one uppercase letter and one special character.',
           reason: 'Password "$password" should be invalid (no special char)',
         );
         expect(
           result,
-          contains('special character'),
+          'Password must contain at least one uppercase letter and one special character.',
           reason: 'Error message should mention special character requirement',
         );
       }
@@ -100,12 +100,12 @@ void main() {
           final result = validatePassword(password);
           expect(
             result,
-            isNotNull,
+            'Password must contain at least one uppercase letter and one special character.',
             reason: 'Password "$password" should be invalid',
           );
           expect(
             result,
-            anyOf([contains('uppercase'), contains('special character')]),
+            'Password must contain at least one uppercase letter and one special character.',
             reason: 'Error message should mention missing requirements',
           );
         }
