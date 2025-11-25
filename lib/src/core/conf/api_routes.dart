@@ -17,6 +17,7 @@ class ApiRoutes {
   static final _QuizRoutes QUIZ = _QuizRoutes._();
   static final _WishlistRoutes WISHLIST = _WishlistRoutes._();
   static final _EnrollmentRoutes ENROLLMENT = _EnrollmentRoutes._();
+  static final _PaymentRoutes PAYMENT = _PaymentRoutes._();
 
   // Legacy direct getters (backward compatibility)
   static String get login => AUTH.login;
@@ -142,4 +143,24 @@ class _EnrollmentRoutes {
   String getCourse(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/getCourse/$courseId';
   String update() => '${ApiRoutes.baseUrl}/Enrollment/update';
+}
+
+class _PaymentRoutes {
+  _PaymentRoutes._();
+
+  // Cart routes
+  String get getCart => '${ApiRoutes.baseUrl}/Payment/getCart';
+  String addToCart(String courseId) =>
+      '${ApiRoutes.baseUrl}/Payment/addToCart/$courseId';
+  String removeFromCart(String courseId) =>
+      '${ApiRoutes.baseUrl}/Payment/removeFromCart/$courseId';
+
+  // Payment routes
+  String get createPayment => '${ApiRoutes.baseUrl}/Payment/createPayment';
+  String get getPayment => '${ApiRoutes.baseUrl}/Payment/payment';
+  String get listPayments => '${ApiRoutes.baseUrl}/Payment/list-payments';
+  String get updatePayment => '${ApiRoutes.baseUrl}/Payment/update-payment';
+  String get createPaymentIntent =>
+      '${ApiRoutes.baseUrl}/Payment/create-payment-intent';
+  String get webhook => '${ApiRoutes.baseUrl}/Payment/webhook';
 }

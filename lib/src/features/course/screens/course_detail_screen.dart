@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../payment/widgets/add_to_cart_button.dart';
 import '../../user/providers/auth_providers.dart';
 import '../providers/course_content_provider.dart';
 import '../providers/enrollment_provider.dart';
@@ -256,18 +257,31 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                       ),
                     )
                   else
-                    Button.primary(
-                      onPressed: isGuest
-                          ? () => _handleEnroll(context, isGuest)
-                          : () => _handleEnrollAction(context, ref),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(LucideIcons.bookOpen, size: 18),
-                          Gap(8),
-                          Text('Enroll Now'),
-                        ],
-                      ),
+                    AddToCartButton(
+                      courseId: widget.courseId,
+                      size: ButtonSize.normal,
+                      onAdded: () {
+                        // Show success toast and optionally navigate to cart
+                        showToast(
+                          context: context,
+                          builder: (context, overlay) => SurfaceCard(
+                            child: Basic(
+                              title: const Text('Added to Cart'),
+                              subtitle: const Text(
+                                'Course has been added to your cart',
+                              ),
+                              leading: Icon(
+                                LucideIcons.check,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              trailing: Button.ghost(
+                                onPressed: () => context.push('/cart'),
+                                child: const Text('View Cart'),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
 
                   const Gap(12),
@@ -318,61 +332,6 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
         );
       },
     );
-  }
-
-  void _handleEnroll(BuildContext context, bool isGuest) {
-    if (!isGuest) {
-      // This shouldn't be called for authenticated users
-      return;
-    }
-
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.8),
-      builder: (dialogContext) => AlertDialog(
-        leading: const Icon(LucideIcons.circleAlert, size: 40),
-        title: const Text(
-          'You are not logged in',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        content: const Text(
-          'Please sign in to enroll in this course and access its content.',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          SecondaryButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          PrimaryButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.push('/login');
-            },
-            child: const Text('Go to Login'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleEnrollAction(BuildContext context, WidgetRef ref) async {
-    try {
-      await ref.read(enrollCourseProvider(widget.courseId).future);
-      if (context.mounted) {
-        _showSuccessDialog(
-          context,
-          'Enrollment Successful',
-          'You have successfully enrolled in this course!',
-        );
-        // Refresh enrollment status
-        ref.invalidate(courseEnrollmentProvider(widget.courseId));
-      }
-    } catch (error) {
-      if (context.mounted) {
-        _showErrorDialog(context, 'Enrollment Failed', error.toString());
-      }
-    }
   }
 
   void _handleWishlistAction(
