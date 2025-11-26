@@ -18,6 +18,7 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
   final String moduleId;
   final String lessonId;
   final String? quizId;
+  final void Function(bool passed)? onQuizComplete;
 
   const QuizDoingScreen({
     super.key,
@@ -25,6 +26,7 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
     required this.moduleId,
     required this.lessonId,
     this.quizId,
+    this.onQuizComplete,
   });
 
   @override
@@ -130,6 +132,13 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
     }
 
     if (state.isSubmitted && state.attemptResult != null) {
+      // Trigger progress callback when quiz is completed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.onQuizComplete != null) {
+          widget.onQuizComplete!(state.attemptResult!.passed);
+        }
+      });
+
       return SingleChildScrollView(
         child: ResultView(
           quiz: quiz,

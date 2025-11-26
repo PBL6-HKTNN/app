@@ -1,9 +1,11 @@
 import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
 import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/providers/course_progress_provider.dart';
 import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
 import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 import 'package:codemy_app/src/features/course/widgets/course_content_sheet.dart';
+import 'package:codemy_app/src/features/course/widgets/course_progress_widgets.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/md_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/quiz_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/video_view.dart';
@@ -29,7 +31,29 @@ class LessonScreen extends ConsumerStatefulWidget {
   ConsumerState<LessonScreen> createState() => _LessonScreenState();
 }
 
-class _LessonScreenState extends ConsumerState<LessonScreen> {
+class _LessonScreenState extends ConsumerState<LessonScreen>
+    with CourseProgressMixin {
+  String? _enrollmentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeProgress();
+  }
+
+  /// Initialize progress tracking
+  void _initializeProgress() {
+    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
+    enrollmentAsync.whenData((enrollmentCheck) {
+      if (enrollmentCheck.success && enrollmentCheck.enrollment != null) {
+        _enrollmentId = enrollmentCheck.enrollment!.id;
+        // Load completed lessons and update current view
+        loadCompletedLessons(_enrollmentId!);
+        updateCurrentView(widget.courseId, widget.lessonId, _enrollmentId!);
+      }
+    });
+  }
+
   /// Saves lesson progress using the proper enrollment ID
   void _saveProgress({int progressStatus = 1}) {
     final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
@@ -195,9 +219,31 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
 
     switch (lesson.lessonType) {
       case LessonType.markdown:
-        return MdView(lessonId: widget.lessonId);
+        return _enrollmentId != null
+            ? MarkdownProgressTracker(
+                courseId: widget.courseId,
+                lessonId: widget.lessonId,
+                enrollmentId: _enrollmentId!,
+                child: MdView(lessonId: widget.lessonId),
+              )
+            : MdView(lessonId: widget.lessonId);
       case LessonType.video:
-        return VideoView(lessonId: widget.lessonId);
+        return VideoView(
+          lessonId: widget.lessonId,
+          onProgressUpdate: _enrollmentId != null
+              ? (currentTime, duration) {
+                  ref
+                      .read(courseProgressProvider.notifier)
+                      .trackVideoProgress(
+                        currentTime,
+                        duration,
+                        widget.courseId,
+                        widget.lessonId,
+                        _enrollmentId!,
+                      );
+                }
+              : null,
+        );
       case LessonType.quiz:
         return QuizView(
           lesson: lesson,

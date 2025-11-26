@@ -10,12 +10,17 @@ import 'package:video_player/video_player.dart';
 class VideoView extends ConsumerStatefulWidget {
   final Lesson? lesson;
   final String? lessonId;
+  final void Function(double currentTime, double duration)? onProgressUpdate;
 
-  const VideoView({super.key, this.lesson, this.lessonId})
-    : assert(
-        lesson != null || lessonId != null,
-        'Either lesson or lessonId must be provided',
-      );
+  const VideoView({
+    super.key,
+    this.lesson,
+    this.lessonId,
+    this.onProgressUpdate,
+  }) : assert(
+         lesson != null || lessonId != null,
+         'Either lesson or lessonId must be provided',
+       );
 
   @override
   ConsumerState<VideoView> createState() => _VideoViewState();
@@ -146,6 +151,14 @@ class _VideoViewState extends ConsumerState<VideoView> {
           ? (_currentPosition.inMilliseconds / totalMillis).clamp(0.0, 1.0)
           : 0.0;
     });
+
+    // Call progress callback if provided
+    if (widget.onProgressUpdate != null && _totalDuration.inMilliseconds > 0) {
+      widget.onProgressUpdate!(
+        _currentPosition.inSeconds.toDouble(),
+        _totalDuration.inSeconds.toDouble(),
+      );
+    }
   }
 
   void _togglePlayPause() {

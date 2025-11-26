@@ -143,6 +143,13 @@ class _EnrollmentRoutes {
   String getCourse(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/getCourse/$courseId';
   String update() => '${ApiRoutes.baseUrl}/Enrollment/update';
+  String updateProgress() => '${ApiRoutes.baseUrl}/Enrollment/update-progress';
+  String updateCurrentView() =>
+      '${ApiRoutes.baseUrl}/Enrollment/update-current-view';
+  String completedLessons(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Enrollment/completed-lessons/$enrollmentId';
+  String isEnrolled(String courseId) =>
+      '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
 }
 
 class _PaymentRoutes {

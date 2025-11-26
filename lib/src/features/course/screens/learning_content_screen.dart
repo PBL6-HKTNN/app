@@ -3,6 +3,8 @@ import 'package:codemy_app/src/features/course/models/dto/course_content.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 import 'package:codemy_app/src/features/course/models/entities/module.dart';
 import 'package:codemy_app/src/features/course/providers/course_content_provider.dart';
+import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
+import 'package:codemy_app/src/features/course/widgets/course_progress_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -22,13 +24,30 @@ class LearningContentScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final courseContent = ref.watch(courseContentProvider(courseId));
+    // Watch enrollment to get progress tracking capability
+    final enrollmentAsync = ref.watch(courseEnrollmentProvider(courseId));
 
     return courseContent.when(
-      data: (content) => _LearningContentView(
-        courseId: courseId,
-        content: content,
-        initialModuleId: initialModuleId,
-        initialLessonId: initialLessonId,
+      data: (content) => enrollmentAsync.when(
+        data: (enrollmentCheck) => _LearningContentView(
+          courseId: courseId,
+          content: content,
+          initialModuleId: initialModuleId,
+          initialLessonId: initialLessonId,
+          enrollmentId:
+              enrollmentCheck.success && enrollmentCheck.enrollment != null
+              ? enrollmentCheck.enrollment!.id
+              : null,
+        ),
+        loading: () =>
+            const Scaffold(child: Center(child: CircularProgressIndicator())),
+        error: (_, __) => _LearningContentView(
+          courseId: courseId,
+          content: content,
+          initialModuleId: initialModuleId,
+          initialLessonId: initialLessonId,
+          enrollmentId: null,
+        ),
       ),
       loading: () =>
           const Scaffold(child: Center(child: CircularProgressIndicator())),
@@ -64,12 +83,14 @@ class _LearningContentView extends StatefulWidget {
   final CourseContent content;
   final String? initialModuleId;
   final String? initialLessonId;
+  final String? enrollmentId;
 
   const _LearningContentView({
     required this.courseId,
     required this.content,
     this.initialModuleId,
     this.initialLessonId,
+    this.enrollmentId,
   });
 
   @override
@@ -117,6 +138,15 @@ class _LearningContentViewState extends State<_LearningContentView> {
             ),
           ],
         ),
+        // Add course progress bar if enrolled
+        if (widget.enrollmentId != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: CourseProgressBar(
+              enrollmentId: widget.enrollmentId!,
+              totalLessons: _getTotalLessonsCount(),
+            ),
+          ),
       ],
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -157,6 +187,13 @@ class _LearningContentViewState extends State<_LearningContentView> {
               return TreeItemView(
                 onPressed: () => _navigateToLesson(context, data),
                 leading: _getLessonIcon(data.lessonType),
+                trailing: widget.enrollmentId != null
+                    ? LessonProgressIndicator(
+                        enrollmentId: widget.enrollmentId!,
+                        lessonId: data.id,
+                        isCurrentLesson: data.id == widget.initialLessonId,
+                      )
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -225,6 +262,13 @@ class _LearningContentViewState extends State<_LearningContentView> {
       case LessonType.quiz:
         return 'Quiz';
     }
+  }
+
+  int _getTotalLessonsCount() {
+    return widget.content.modules.fold(
+      0,
+      (total, module) => total + (module.lessons?.length ?? 0),
+    );
   }
 
   void _navigateToLesson(BuildContext context, Lesson lesson) {
