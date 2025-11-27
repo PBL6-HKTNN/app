@@ -66,3 +66,17 @@ final updateEnrollmentProvider = FutureProvider.autoDispose
       }
       return true;
     });
+
+final completedLessonsProvider = FutureProvider.autoDispose
+    .family<List<String>, String>((ref, enrollmentId) async {
+      final service = ref.read(enrollmentServiceProvider);
+      final response = await service.getCompletedLessons(enrollmentId);
+      if (!response.isSuccess || response.data == null) {
+        throw ApiException(
+          response.error?.toString() ?? 'Failed to load completed lessons',
+          statusCode: response.status,
+          data: response.data,
+        );
+      }
+      return response.data!;
+    });

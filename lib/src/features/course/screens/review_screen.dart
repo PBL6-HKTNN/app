@@ -1,11 +1,11 @@
 // lib/screens/review_screen.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/widgets.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+
+import '../../../utils/safe_pop.dart';
+import '../models/entities/review.dart';
 import '../providers/review_provider.dart';
 import '../widgets/review_widgets.dart';
-import '../models/entities/review.dart';
-import 'package:go_router/go_router.dart';
 
 class ReviewScreen extends ConsumerWidget {
   final String courseId;
@@ -22,10 +22,11 @@ class ReviewScreen extends ConsumerWidget {
     final state = ref.watch(reviewProvider(courseId));
     final notifier = ref.read(reviewProvider(courseId).notifier);
 
-    return WillPopScope(
-      onWillPop: () async {
-        context.pop();
-        return false;
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          safePop(context);
+        }
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.background,
@@ -37,7 +38,7 @@ class ReviewScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Button.ghost(
-                      onPressed: () => context.pop(),
+                      onPressed: () => safePop(context),
                       child: const Icon(LucideIcons.arrowLeft, size: 20),
                     ),
                     const Spacer(),

@@ -143,20 +143,21 @@ class _VideoViewState extends ConsumerState<VideoView> {
       return;
     }
 
+    final position = _controller!.value.position;
+    final total = _controller!.value.duration;
+
     setState(() {
-      _currentPosition = _controller!.value.position;
-      _isPlaying = _controller!.value.isPlaying;
-      final totalMillis = _totalDuration.inMilliseconds;
-      _progress = totalMillis > 0
-          ? (_currentPosition.inMilliseconds / totalMillis).clamp(0.0, 1.0)
+      _currentPosition = position;
+      _totalDuration = total;
+      _progress = total.inMilliseconds > 0
+          ? position.inMilliseconds / total.inMilliseconds
           : 0.0;
     });
 
-    // Call progress callback if provided
-    if (widget.onProgressUpdate != null && _totalDuration.inMilliseconds > 0) {
+    if (widget.onProgressUpdate != null && total.inMilliseconds > 0) {
       widget.onProgressUpdate!(
-        _currentPosition.inSeconds.toDouble(),
-        _totalDuration.inSeconds.toDouble(),
+        position.inMilliseconds.toDouble(),
+        total.inMilliseconds.toDouble(),
       );
     }
   }

@@ -222,4 +222,11 @@ class EnrollmentService {
       );
     }
   }
+
+  /// Alias for getCompletedLessons to match web service naming
+  Future<ApiRes<List<String>>> getEnrolledCourseCompletedLessons(
+    String enrollmentId,
+  ) async {
+    return getCompletedLessons(enrollmentId);
+  }
 }

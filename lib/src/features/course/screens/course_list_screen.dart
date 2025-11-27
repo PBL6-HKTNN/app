@@ -1,8 +1,8 @@
 import 'package:codemy_app/src/presentation/layouts/main_navigation_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../../utils/safe_pop.dart';
 import '../models/dto/course_requests.dart';
 import '../models/entities/course.dart';
 import '../providers/category_provider.dart';
@@ -94,7 +94,7 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                   child: Row(
                     children: [
                       Button.ghost(
-                        onPressed: () => context.pop(),
+                        onPressed: () => safePop(context),
                         child: const Icon(LucideIcons.arrowLeft),
                       ),
                       const Spacer(),

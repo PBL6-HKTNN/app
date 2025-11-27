@@ -117,4 +117,28 @@ class LessonService {
       );
     }
   }
+
+  Future<ApiRes<Lesson>> checkLessonLocked(String lessonId) async {
+    try {
+      final response = await _apiClient.get(
+        ApiRoutes.LESSON.checkLocked(lessonId),
+      );
+      return ApiRes<Lesson>.fromJson(
+        response,
+        (data) => Lesson.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to check lesson lock status',
+        tag: 'LESSON',
+        error: error,
+      );
+      return ApiRes<Lesson>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
 }

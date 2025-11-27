@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../../utils/safe_pop.dart';
 import '../../payment/widgets/add_to_cart_button.dart';
 import '../../user/providers/auth_providers.dart';
 import '../providers/course_content_provider.dart';
@@ -422,7 +423,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
   }
 
   void _goBack(BuildContext context) {
-    context.pop();
+    safePop(context);
   }
 
   static String _formatPrice(Decimal price) {

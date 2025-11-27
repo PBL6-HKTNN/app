@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/enrollment_service.dart';
+import 'enrollment_provider.dart';
 
 /// Course progress provider for tracking lesson completion, video progress, and current view
 final courseProgressProvider =
@@ -59,10 +60,6 @@ class CourseProgressNotifier extends Notifier<CourseProgressState> {
 
   /// Load completed lessons for an enrollment
   Future<void> loadCompletedLessons(String enrollmentId) async {
-    if (state.completedLessonsByEnrollment.containsKey(enrollmentId)) {
-      return; // Already loaded
-    }
-
     state = state.copyWith(isLoading: true);
 
     try {
@@ -144,6 +141,7 @@ class CourseProgressNotifier extends Notifier<CourseProgressState> {
         // Failed to mark lesson complete on server
       } else {
         // Successfully marked lesson complete
+        ref.invalidate(completedLessonsProvider(enrollmentId));
       }
     } catch (error) {
       // Revert optimistic update on error
@@ -216,18 +214,19 @@ class CourseProgressNotifier extends Notifier<CourseProgressState> {
 
     // Create new debounced timer
     final timer = Timer(const Duration(seconds: 2), () {
-      final watchedPercentage = duration > 0 ? currentTime / duration : 0;
-
-      // Mark complete if watched 80% or more
-      if (watchedPercentage >= 0.8 &&
-          !isLessonCompleted(enrollmentId, lessonId)) {
-        markLessonComplete(courseId, lessonId, enrollmentId);
-      }
+      // Debounced logic if needed in future
     });
 
     final newTimers = Map<String, Timer>.from(state.debounceTimers);
     newTimers[progressKey] = timer;
     state = state.copyWith(debounceTimers: newTimers);
+
+    // Check if video is 90% watched and mark complete immediately (web parity)
+    final watchedPercentage = duration > 0 ? currentTime / duration : 0;
+    if (watchedPercentage >= 0.9 &&
+        !isLessonCompleted(enrollmentId, lessonId)) {
+      markLessonComplete(courseId, lessonId, enrollmentId);
+    }
   }
 
   /// Mark quiz complete

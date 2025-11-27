@@ -97,6 +97,8 @@ class _LessonRoutes {
   String update(String lessonId) =>
       '${ApiRoutes.baseUrl}/Lesson/update/$lessonId';
   String delete(String lessonId) => '${ApiRoutes.baseUrl}/Lesson/$lessonId';
+  String checkLocked(String lessonId) =>
+      '${ApiRoutes.baseUrl}/Lesson/check-locked/$lessonId';
 }
 
 class _CategoryRoutes {
@@ -143,11 +145,11 @@ class _EnrollmentRoutes {
   String getCourse(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/getCourse/$courseId';
   String update() => '${ApiRoutes.baseUrl}/Enrollment/update';
-  String updateProgress() => '${ApiRoutes.baseUrl}/Enrollment/update-progress';
+  String updateProgress() => '${ApiRoutes.baseUrl}/Enrollment/updateProgress';
   String updateCurrentView() =>
       '${ApiRoutes.baseUrl}/Enrollment/update-current-view';
   String completedLessons(String enrollmentId) =>
-      '${ApiRoutes.baseUrl}/Enrollment/completed-lessons/$enrollmentId';
+      '${ApiRoutes.baseUrl}/Enrollment/lessons-completed/$enrollmentId';
   String isEnrolled(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
 }

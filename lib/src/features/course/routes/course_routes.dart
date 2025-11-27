@@ -48,11 +48,18 @@ class CourseRoutes {
     ),
     GoRoute(
       path: '/learn/:courseId',
-      builder: (context, state) {
-        final courseId = state.pathParameters['courseId']!;
-        return LearningContentScreen(courseId: courseId);
-      },
+      // builder: (context, state) {
+      //   final courseId = state.pathParameters['courseId']!;
+      //   return LearningContentScreen(courseId: courseId);
+      // },
       routes: [
+        GoRoute(
+          path: 'content-listing',
+          builder: (context, state) {
+            final courseId = state.pathParameters['courseId']!;
+            return LearningContentScreen(courseId: courseId);
+          },
+        ),
         GoRoute(
           path: ':moduleId',
           builder: (context, state) {

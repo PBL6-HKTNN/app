@@ -147,11 +147,16 @@ class MarkdownProgressTracker extends ConsumerStatefulWidget {
 class _MarkdownProgressTrackerState
     extends ConsumerState<MarkdownProgressTracker> {
   final ScrollController _scrollController = ScrollController();
+  bool _hasMarkedComplete = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // Mark short lessons as complete immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkIfShortLesson();
+    });
   }
 
   @override
@@ -161,6 +166,32 @@ class _MarkdownProgressTrackerState
     super.dispose();
   }
 
+  void _checkIfShortLesson() {
+    if (!_scrollController.hasClients) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    // If content is short (less than 100 pixels scrollable), mark as complete
+    if (maxScroll < 100 && !_hasMarkedComplete) {
+      final isAlreadyCompleted =
+          ref
+              .read(courseProgressProvider)
+              .completedLessonsByEnrollment[widget.enrollmentId]
+              ?.contains(widget.lessonId) ??
+          false;
+
+      if (!isAlreadyCompleted) {
+        _hasMarkedComplete = true;
+        ref
+            .read(courseProgressProvider.notifier)
+            .markLessonComplete(
+              widget.courseId,
+              widget.lessonId,
+              widget.enrollmentId,
+            );
+      }
+    }
+  }
+
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
@@ -168,11 +199,13 @@ class _MarkdownProgressTrackerState
     final scrollPercentage =
         scrollPosition.pixels / scrollPosition.maxScrollExtent;
 
-    if (scrollPercentage.isFinite) {
+    if (scrollPercentage.isFinite &&
+        scrollPercentage >= 0.9 &&
+        !_hasMarkedComplete) {
+      _hasMarkedComplete = true;
       ref
           .read(courseProgressProvider.notifier)
-          .trackMarkdownScroll(
-            scrollPercentage,
+          .markLessonComplete(
             widget.courseId,
             widget.lessonId,
             widget.enrollmentId,

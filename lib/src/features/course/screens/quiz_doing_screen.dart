@@ -1,6 +1,7 @@
 import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
 import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
+import 'package:codemy_app/src/features/course/providers/course_progress_provider.dart';
 import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
 import 'package:codemy_app/src/features/course/providers/quiz_provider.dart';
 import 'package:codemy_app/src/features/course/states/quiz_attempt_state.dart';
@@ -34,6 +35,8 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
 }
 
 class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
+  String? _enrollmentId;
+
   /// Saves quiz progress using the proper enrollment ID
   void _saveProgress({int progressStatus = 1}) {
     final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
@@ -51,13 +54,23 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
 
   @override
   void dispose() {
-    // Save progress on unmount using proper enrollment ID
-    _saveProgress(progressStatus: 1); // In progress
+    // Update current view on unmount
+    if (_enrollmentId != null) {
+      ref
+          .read(courseProgressProvider.notifier)
+          .updateCurrentView(widget.courseId, widget.lessonId, _enrollmentId!);
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Set enrollment ID for dispose
+    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
+    if (enrollmentAsync.hasValue && enrollmentAsync.value!.success) {
+      _enrollmentId = enrollmentAsync.value!.enrollment?.id;
+    }
+
     if (widget.quizId == null || widget.quizId!.isEmpty) {
       return Scaffold(
         headers: [

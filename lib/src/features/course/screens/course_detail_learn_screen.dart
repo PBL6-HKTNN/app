@@ -2,10 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../../utils/safe_pop.dart';
 import '../../user/providers/auth_providers.dart';
 import '../providers/course_content_provider.dart';
 import '../providers/enrollment_provider.dart';
-import '../widgets/course_content_view.dart';
+import '../widgets/course_content_list.dart';
 
 class CourseDetailLearnScreen extends ConsumerWidget {
   final String courseId;
@@ -38,10 +39,11 @@ class CourseDetailLearnScreen extends ConsumerWidget {
       loading: () =>
           const Scaffold(child: Center(child: CircularProgressIndicator())),
       error: (error, _) =>
-          _ErrorView(onBack: () => context.pop(), message: error.toString()),
+          _ErrorView(onBack: () => safePop(context), message: error.toString()),
       data: (content) {
         final course = content.course;
         final modules = content.modules;
+        final enrollmentId = enrollmentAsync.asData?.value.enrollment?.id;
         final theme = Theme.of(context);
 
         return Scaffold(
@@ -163,15 +165,17 @@ class CourseDetailLearnScreen extends ConsumerWidget {
                           children: [
                             Text('Course Content', style: theme.typography.h4),
                             const Gap(12),
-                            CourseContentView(
+                            CourseContentList(
+                              modules: modules,
                               courseId: courseId,
-                              showHeader: false,
-                              onLessonTap: (lesson) => _handleLessonNavigate(
-                                context,
-                                courseId,
-                                lesson.moduleId,
-                                lesson.id,
-                              ),
+                              enrollmentId: enrollmentId,
+                              onLessonSelect: (moduleId, lessonId) =>
+                                  _handleLessonNavigate(
+                                    context,
+                                    courseId,
+                                    moduleId,
+                                    lessonId,
+                                  ),
                             ),
                           ],
                         ),
@@ -289,7 +293,7 @@ class CourseDetailLearnScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Button.secondary(
-                      onPressed: () => context.pop(),
+                      onPressed: () => safePop(context),
                       child: const Text('Back to Courses'),
                     ),
                     const Gap(12),
