@@ -22,7 +22,11 @@ class CartNotifier extends Notifier<CartState> {
 
   /// Load cart items from API
   Future<void> loadCart() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      addingCourseId: null,
+      clearError: true,
+    );
 
     final response = await _service.getCart();
 
@@ -43,7 +47,7 @@ class CartNotifier extends Notifier<CartState> {
       return false;
     }
 
-    state = state.copyWith(isAddingItem: true, clearError: true);
+    state = state.copyWith(addingCourseId: courseId, clearError: true);
 
     final response = await _service.addToCart(courseId);
 
@@ -53,7 +57,7 @@ class CartNotifier extends Notifier<CartState> {
       return true;
     } else {
       state = state.copyWith(
-        isAddingItem: false,
+        addingCourseId: null,
         error: response.error?.toString() ?? 'Failed to add to cart',
       );
       return false;

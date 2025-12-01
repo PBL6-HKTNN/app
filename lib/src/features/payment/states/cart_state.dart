@@ -7,14 +7,14 @@ class CartState {
   final List<CartItem> items;
   final bool isLoading;
   final String? error;
-  final bool isAddingItem;
+  final String? addingCourseId;
   final bool isRemovingItem;
 
   const CartState({
     this.items = const [],
     this.isLoading = false,
     this.error,
-    this.isAddingItem = false,
+    this.addingCourseId,
     this.isRemovingItem = false,
   });
 
@@ -45,7 +45,7 @@ class CartState {
     List<CartItem>? items,
     bool? isLoading,
     String? error,
-    bool? isAddingItem,
+    String? addingCourseId,
     bool? isRemovingItem,
     bool clearError = false,
   }) {
@@ -53,7 +53,7 @@ class CartState {
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      isAddingItem: isAddingItem ?? this.isAddingItem,
+      addingCourseId: addingCourseId ?? this.addingCourseId,
       isRemovingItem: isRemovingItem ?? this.isRemovingItem,
     );
   }

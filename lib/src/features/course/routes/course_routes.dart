@@ -43,15 +43,16 @@ class CourseRoutes {
       path: '/course/:courseId/reviews',
       builder: (context, state) {
         final courseId = state.pathParameters['courseId']!;
-        return ReviewScreen(courseId: courseId);
+        final enrolled = state.extra as bool? ?? false;
+        return ReviewScreen(courseId: courseId, enrolled: enrolled);
       },
     ),
     GoRoute(
       path: '/learn/:courseId',
-      // builder: (context, state) {
-      //   final courseId = state.pathParameters['courseId']!;
-      //   return LearningContentScreen(courseId: courseId);
-      // },
+      builder: (context, state) {
+        final courseId = state.pathParameters['courseId']!;
+        return LearningContentScreen(courseId: courseId);
+      },
       routes: [
         GoRoute(
           path: 'content-listing',

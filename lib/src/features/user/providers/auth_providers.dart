@@ -1,11 +1,12 @@
 import 'dart:convert';
+
 import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/core/utils/persistence.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/login.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/oauth.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/register.dart';
-import 'package:codemy_app/src/features/user/models/dto/auth/verify.dart';
 import 'package:codemy_app/src/features/user/models/dto/auth/reset_password.dart';
+import 'package:codemy_app/src/features/user/models/dto/auth/verify.dart';
 import 'package:codemy_app/src/features/user/models/entity/user.dart';
 import 'package:codemy_app/src/features/user/services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,10 +71,21 @@ class AuthStateNotifier extends Notifier<AuthState> {
       final response = await _authService.login(loginDto);
       if (response.isSuccess && response.data != null) {
         if (response.status != 200) {
-          state = state.copyWith(
-            isLoading: false,
-            error: 'Login failed with status: ${response.status}',
-          );
+          String errorMessage;
+          switch (response.status) {
+            case 401:
+              errorMessage = 'Invalid email or password';
+              break;
+            case 403:
+              errorMessage = 'Account is disabled or suspended';
+              break;
+            case 429:
+              errorMessage = 'Too many login attempts. Please try again later';
+              break;
+            default:
+              errorMessage = 'Login failed with status: ${response.status}';
+          }
+          state = state.copyWith(isLoading: false, error: errorMessage);
           return;
         }
         if (response.data!.requiresEmailVerification == true) {

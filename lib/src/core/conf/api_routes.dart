@@ -17,6 +17,7 @@ class ApiRoutes {
   static final _QuizRoutes QUIZ = _QuizRoutes._();
   static final _WishlistRoutes WISHLIST = _WishlistRoutes._();
   static final _EnrollmentRoutes ENROLLMENT = _EnrollmentRoutes._();
+  static final _ReviewRoutes REVIEW = _ReviewRoutes._();
   static final _PaymentRoutes PAYMENT = _PaymentRoutes._();
 
   // Legacy direct getters (backward compatibility)
@@ -152,6 +153,16 @@ class _EnrollmentRoutes {
       '${ApiRoutes.baseUrl}/Enrollment/lessons-completed/$enrollmentId';
   String isEnrolled(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
+}
+
+class _ReviewRoutes {
+  _ReviewRoutes._();
+
+  String get create => '${ApiRoutes.baseUrl}/Review';
+  String byCourse(String courseId) =>
+      '${ApiRoutes.baseUrl}/Review/course/$courseId';
+  String averageRating(String courseId) =>
+      '${ApiRoutes.baseUrl}/Review/course/$courseId/average';
 }
 
 class _PaymentRoutes {

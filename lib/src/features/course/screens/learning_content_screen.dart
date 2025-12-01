@@ -116,7 +116,7 @@ class _LearningContentViewState extends State<_LearningContentView> {
         // Add course progress bar if enrolled
         if (widget.enrollmentId != null)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: CourseProgressBar(
               enrollmentId: widget.enrollmentId!,
               totalLessons: _getTotalLessonsCount(),

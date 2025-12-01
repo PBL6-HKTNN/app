@@ -218,16 +218,20 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                           ],
                         ),
                         const Gap(12),
-                        Card(
-                          padding: const EdgeInsets.all(12),
-                          child: CourseContentView(
-                            courseId: course.id,
-                            showHeader: false,
-                            onLessonTap: (lesson) => _handleLessonNavigate(
-                              context,
-                              course.id,
-                              lesson.moduleId,
-                              lesson.id,
+                        SizedBox(
+                          height:
+                              300, // Limit height to prevent taking too much space
+                          child: Card(
+                            padding: const EdgeInsets.all(12),
+                            child: CourseContentView(
+                              courseId: course.id,
+                              showHeader: false,
+                              onLessonTap: (lesson) => _handleLessonNavigate(
+                                context,
+                                course.id,
+                                lesson.moduleId,
+                                lesson.id,
+                              ),
                             ),
                           ),
                         ),
@@ -297,8 +301,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                         children: [
                           Icon(
                             isInWishlist
-                                ? LucideIcons.heart
-                                : LucideIcons.heartOff,
+                                ? LucideIcons.heartOff
+                                : LucideIcons.heart,
                             size: 18,
                           ),
                           const Gap(8),
@@ -315,8 +319,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
 
                   // Reviews button
                   Button.ghost(
-                    onPressed: () =>
-                        context.push('/course/${course.id}/reviews'),
+                    onPressed: () => context.push(
+                      '/course/${course.id}/reviews',
+                      extra: isEnrolled,
+                    ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

@@ -89,7 +89,7 @@ class CourseProgressBar extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Card(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

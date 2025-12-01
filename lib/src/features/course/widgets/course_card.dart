@@ -13,10 +13,6 @@ class CourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final modules = course.modules ?? <Module>[];
-    final totalLessons = modules.fold<int>(
-      0,
-      (sum, mod) => sum + (mod.numberOfLessons),
-    );
     final moduleCount = modules.isEmpty
         ? course.numberOfModules
         : modules.length;
@@ -106,7 +102,7 @@ class CourseCard extends StatelessWidget {
                   _infoRow(icon: LucideIcons.clock, label: course.duration),
                   _infoRow(
                     icon: LucideIcons.bookOpen,
-                    label: '$moduleCount modules, $totalLessons lessons',
+                    label: '$moduleCount modules',
                   ),
                 ],
               ),

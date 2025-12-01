@@ -21,7 +21,7 @@ class AddToCartButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isInCart = ref.watch(isInCartProvider(courseId));
     final cartState = ref.watch(cartProvider);
-    final isAdding = cartState.isAddingItem;
+    final isAdding = cartState.addingCourseId == courseId;
     final theme = Theme.of(context);
 
     if (isInCart) {

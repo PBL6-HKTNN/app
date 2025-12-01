@@ -71,6 +71,7 @@ class CourseContentList extends ConsumerWidget {
       ..sort((a, b) => a.order.compareTo(b.order));
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Accordion(
         items: sortedModules
             .map(
@@ -168,15 +169,18 @@ class CourseContentList extends ConsumerWidget {
         ),
       ),
       content: Padding(
-        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+        padding: const EdgeInsets.only(left: 0, right: 0, bottom: 8),
         child: Column(
           children: sortedLessons
               .map(
-                (lesson) => _buildLessonItem(
-                  lesson,
-                  module.id,
-                  completedLessons,
-                  context,
+                (lesson) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildLessonItem(
+                    lesson,
+                    module.id,
+                    completedLessons,
+                    context,
+                  ),
                 ),
               )
               .toList(),
@@ -200,32 +204,32 @@ class CourseContentList extends ConsumerWidget {
         child: GestureDetector(
           onTap: () => onLessonSelect?.call(moduleId, lesson.id),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
             child: Row(
               children: [
                 // Lesson type icon
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                   decoration: BoxDecoration(
                     color: isCurrent
                         ? Theme.of(
                             context,
                           ).colorScheme.primary.withValues(alpha: 0.1)
                         : Theme.of(context).colorScheme.background,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                   child: Center(
                     child: Icon(
                       _getLessonIcon(lesson.lessonType),
-                      size: 16,
+                      size: 14,
                       color: isCurrent
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.mutedForeground,
                     ),
                   ),
                 ),
-                const Gap(12),
+                const Gap(10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +237,7 @@ class CourseContentList extends ConsumerWidget {
                       Text(
                         lesson.title,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: isCurrent
                               ? FontWeight.w600
                               : FontWeight.w500,
@@ -242,11 +246,11 @@ class CourseContentList extends ConsumerWidget {
                               : null,
                         ),
                       ),
-                      const Gap(2),
+                      const Gap(1),
                       Text(
                         _getLessonTypeText(lesson.lessonType),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Theme.of(context).colorScheme.mutedForeground,
                         ),
                       ),
@@ -255,8 +259,8 @@ class CourseContentList extends ConsumerWidget {
                 ),
                 // Completion indicator
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 18,
+                  height: 18,
                   decoration: BoxDecoration(
                     color: isCompleted
                         ? Theme.of(context).colorScheme.primary
@@ -266,7 +270,7 @@ class CourseContentList extends ConsumerWidget {
                   child: isCompleted
                       ? const Icon(
                           BootstrapIcons.check,
-                          size: 12,
+                          size: 10,
                           color: Colors.white,
                         )
                       : null,

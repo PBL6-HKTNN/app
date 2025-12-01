@@ -226,7 +226,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ),
       ),
     );
-    context.go('/my-courses');
+
+    // Delay navigation to allow toast to be displayed
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        context.go('/your-courses');
+      }
+    });
   }
 
   void _onPaymentError(String error) {

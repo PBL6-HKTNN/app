@@ -1,36 +1,52 @@
-// lib/providers/review_provider.dart
+import 'package:codemy_app/src/core/networks/exception.dart';
+import 'package:codemy_app/src/features/course/models/dto/review_requests.dart';
+import 'package:codemy_app/src/features/course/models/entities/review.dart';
+import 'package:codemy_app/src/features/course/services/review_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import '../services/review_service.dart';
-import '../models/entities/review.dart';
 
-final reviewProvider =
-    StateNotifierProvider.family<
-      ReviewNotifier,
-      AsyncValue<List<Review>>,
-      String
-    >((ref, courseId) => ReviewNotifier(courseId, ReviewService()));
+final reviewServiceProvider = Provider<ReviewService>((ref) {
+  return ReviewService();
+});
 
-class ReviewNotifier extends StateNotifier<AsyncValue<List<Review>>> {
-  final ReviewService _service;
-  final String _courseId;
+final createReviewProvider = FutureProvider.autoDispose
+    .family<bool, CreateReviewRequest>((ref, request) async {
+      final service = ref.read(reviewServiceProvider);
+      final response = await service.createReview(request);
+      if (!response.isSuccess) {
+        throw ApiException(
+          response.error?.toString() ?? 'Failed to create review',
+          statusCode: response.status,
+          data: null,
+        );
+      }
+      return true;
+    });
 
-  ReviewNotifier(this._courseId, this._service) : super(const AsyncLoading()) {
-    loadReviews();
-  }
+final reviewsByCourseProvider = FutureProvider.autoDispose
+    .family<List<Review>, String>((ref, courseId) async {
+      final service = ref.read(reviewServiceProvider);
+      final response = await service.getReviewsByCourse(courseId);
+      if (!response.isSuccess || response.data == null) {
+        throw ApiException(
+          response.error?.toString() ?? 'Failed to load reviews',
+          statusCode: response.status,
+          data: response.data,
+        );
+      }
+      return response.data!;
+    });
 
-  Future<void> loadReviews() async {
-    try {
-      final reviews = await _service.fetchReviews(_courseId);
-      state = AsyncData(reviews);
-    } catch (e) {
-      state = AsyncError(e, StackTrace.current);
+final averageRatingProvider = FutureProvider.autoDispose.family<double, String>(
+  (ref, courseId) async {
+    final service = ref.read(reviewServiceProvider);
+    final response = await service.getAverageRatingByCourse(courseId);
+    if (!response.isSuccess || response.data == null) {
+      throw ApiException(
+        response.error?.toString() ?? 'Failed to load average rating',
+        statusCode: response.status,
+        data: response.data,
+      );
     }
-  }
-
-  Future<void> submitReview(Review review) async {
-    await _service.submitReview(_courseId, review);
-    final current = state.value ?? [];
-    state = AsyncData([review, ...current]);
-  }
-}
+    return response.data!;
+  },
+);

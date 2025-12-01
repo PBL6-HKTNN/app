@@ -98,6 +98,23 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
       data: (lesson) => lesson != null
           ? _buildLessonScaffold(context, lesson, enrollmentAsync)
           : Scaffold(
+              headers: [
+                AppBar(
+                  title: const Text('Lesson Locked'),
+                  trailing: [
+                    Button(
+                      style: ButtonStyle.ghost(),
+                      onPressed: () => _openCourseContentSheet(context),
+                      child: const Icon(RadixIcons.hamburgerMenu),
+                    ),
+                    Button(
+                      style: ButtonStyle.ghost(),
+                      onPressed: () => _confirmExit(context),
+                      child: const Icon(RadixIcons.cross1),
+                    ),
+                  ],
+                ),
+              ],
               child: DrawerOverlay(
                 child: Padding(
                   padding: const EdgeInsets.all(15.0),
