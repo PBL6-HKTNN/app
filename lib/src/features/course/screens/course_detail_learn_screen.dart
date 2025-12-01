@@ -44,7 +44,11 @@ class CourseDetailLearnScreen extends ConsumerWidget {
         final course = content.course;
         final modules = content.modules;
         final enrollmentId = enrollmentAsync.asData?.value.enrollment?.id;
+        final enrollment = enrollmentAsync.asData?.value.enrollment;
         final theme = Theme.of(context);
+
+        // Calculate progress based on enrollment progressStatus
+        final progressText = _getProgressText(enrollment?.progressStatus ?? 0);
 
         return Scaffold(
           backgroundColor: theme.colorScheme.background,
@@ -94,16 +98,8 @@ class CourseDetailLearnScreen extends ConsumerWidget {
                           ),
                           const Gap(12),
 
-                          // Progress indicator
-                          LinearProgressIndicator(
-                            value: 0.0, // TODO: Calculate actual progress
-                            backgroundColor: theme.colorScheme.muted,
-                          ),
-                          const Gap(8),
-                          Text(
-                            '0% Complete', // TODO: Show actual progress
-                            style: theme.typography.small,
-                          ),
+                          // Progress status
+                          Text(progressText, style: theme.typography.small),
                         ],
                       ),
                     ),
@@ -325,6 +321,19 @@ class CourseDetailLearnScreen extends ConsumerWidget {
       final firstModule = modules.first;
       final firstLesson = firstModule.lessons!.first;
       context.push('/learn/$courseId/${firstModule.id}/${firstLesson.id}');
+    }
+  }
+
+  String _getProgressText(int progressStatus) {
+    switch (progressStatus) {
+      case 0: // NOT_STARTED
+        return 'Not Started';
+      case 1: // IN_PROGRESS
+        return '50% Complete'; // Could be enhanced to show actual progress
+      case 2: // COMPLETED
+        return '100% Complete';
+      default:
+        return 'Not Started';
     }
   }
 }

@@ -25,6 +25,7 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(
       isLoading: true,
       addingCourseId: null,
+      isRemovingItem: false,
       clearError: true,
     );
 
@@ -54,6 +55,7 @@ class CartNotifier extends Notifier<CartState> {
     if (response.isSuccess) {
       // Refresh cart to get updated items
       await loadCart();
+      // After loadCart, addingCourseId will be null (from loadCart), so button returns to normal state
       return true;
     } else {
       state = state.copyWith(
@@ -66,7 +68,11 @@ class CartNotifier extends Notifier<CartState> {
 
   /// Remove a course from the cart
   Future<bool> removeFromCart(String courseId) async {
-    state = state.copyWith(isRemovingItem: true, clearError: true);
+    state = state.copyWith(
+      isRemovingItem: true,
+      addingCourseId: null, // Clear any adding state immediately
+      clearError: true,
+    );
 
     final response = await _service.removeFromCart(courseId);
 

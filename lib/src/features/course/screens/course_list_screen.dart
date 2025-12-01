@@ -4,9 +4,11 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../../utils/safe_pop.dart';
 import '../models/dto/course_requests.dart';
+import '../models/dto/enrollment_responses.dart';
 import '../models/entities/course.dart';
 import '../providers/category_provider.dart';
 import '../providers/course_provider.dart';
+import '../providers/enrollment_provider.dart';
 import '../widgets/course_card.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/filter_sheet.dart';
@@ -47,6 +49,13 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
     }
   }
 
+  bool _isCourseJoined(Course course, List<JoinedCourse>? enrolledCourses) {
+    if (enrolledCourses == null) return false;
+    return enrolledCourses.any(
+      (enrolledCourse) => enrolledCourse.id == course.id,
+    );
+  }
+
   List<Course> get _filteredCourses {
     return _allCourses.where((course) {
       final matchesQuery =
@@ -61,6 +70,7 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final enrolledCoursesAsync = ref.watch(enrolledCoursesProvider);
 
     return MainNavigationBar(
       child: DrawerOverlay(
@@ -174,8 +184,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                             itemCount: _filteredCourses.length,
                             separatorBuilder: (_, __) => const Gap(12),
                             itemBuilder: (context, index) {
+                              final course = _filteredCourses[index];
+                              final enrolledCourses =
+                                  enrolledCoursesAsync.value;
+                              final isJoined = _isCourseJoined(
+                                course,
+                                enrolledCourses,
+                              );
                               return CourseCard(
-                                course: _filteredCourses[index],
+                                course: course,
+                                isJoined: isJoined,
                               );
                             },
                           ),

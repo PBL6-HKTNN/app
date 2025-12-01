@@ -24,6 +24,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   @override
+  void dispose() {
+    ref.read(checkoutProvider.notifier).clearCheckout();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final checkoutState = ref.watch(checkoutProvider);
     final theme = Theme.of(context);
@@ -213,13 +219,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   void _onPaymentSuccess() {
     if (!mounted) return;
 
+    final navigator = GoRouter.of(context);
+    final currentTheme = theme;
+    final currentContext = context;
+
     showToast(
-      context: context,
-      builder: (context, overlay) => SurfaceCard(
+      context: currentContext,
+      builder: (_, overlay) => SurfaceCard(
         child: Basic(
           leading: Icon(
             LucideIcons.circleCheck,
-            color: theme.colorScheme.primary,
+            color: currentTheme.colorScheme.primary,
           ),
           title: const Text('Payment Successful'),
           subtitle: const Text('Your courses are now available'),
@@ -227,24 +237,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
     );
 
-    // Delay navigation to allow toast to be displayed
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        context.go('/your-courses');
-      }
-    });
+    // Navigate immediately - toast will remain visible
+    navigator.go('/your-courses');
   }
 
   void _onPaymentError(String error) {
     if (!mounted) return;
 
+    final currentTheme = theme;
+
     showToast(
       context: context,
-      builder: (context, overlay) => SurfaceCard(
+      builder: (_, overlay) => SurfaceCard(
         child: Basic(
           leading: Icon(
             LucideIcons.circleX,
-            color: theme.colorScheme.destructive,
+            color: currentTheme.colorScheme.destructive,
           ),
           title: const Text('Payment Failed'),
           subtitle: Text(error),

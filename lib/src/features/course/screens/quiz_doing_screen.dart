@@ -1,5 +1,4 @@
 import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
-import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
 import 'package:codemy_app/src/features/course/providers/course_progress_provider.dart';
 import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
@@ -36,21 +35,6 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
 
 class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
   String? _enrollmentId;
-
-  /// Saves quiz progress using the proper enrollment ID
-  void _saveProgress({int progressStatus = 1}) {
-    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
-    enrollmentAsync.whenData((enrollmentCheck) {
-      if (enrollmentCheck.success && enrollmentCheck.enrollment != null) {
-        final payload = UpdateEnrollmentRequest(
-          enrollmentId: enrollmentCheck.enrollment!.id,
-          progressStatus: progressStatus,
-          lessonId: widget.lessonId,
-        );
-        ref.read(updateEnrollmentProvider(payload));
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -149,6 +133,17 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (widget.onQuizComplete != null) {
           widget.onQuizComplete!(state.attemptResult!.passed);
+        }
+        // Mark lesson complete if marks exceed passing marks
+        if (_enrollmentId != null &&
+            state.attemptResult!.score > quiz.passingMarks) {
+          ref
+              .read(courseProgressProvider.notifier)
+              .markLessonComplete(
+                widget.courseId,
+                widget.lessonId,
+                _enrollmentId!,
+              );
         }
       });
 
@@ -385,7 +380,6 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
     );
 
     if (shouldExit == true) {
-      _saveProgress(progressStatus: 1);
       _goBack(context);
     }
   }

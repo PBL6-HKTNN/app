@@ -2,7 +2,7 @@ import 'package:codemy_app/src/features/payment/providers/cart_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-/// Add to cart button widget with loading and "in cart" states
+/// Add to cart button widget with "in cart" states
 class AddToCartButton extends ConsumerWidget {
   final String courseId;
   final VoidCallback? onAdded;
@@ -19,9 +19,8 @@ class AddToCartButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isInCart = ref.watch(isInCartProvider(courseId));
     final cartState = ref.watch(cartProvider);
-    final isAdding = cartState.addingCourseId == courseId;
+    final isInCart = cartState.containsCourse(courseId);
     final theme = Theme.of(context);
 
     if (isInCart) {
@@ -39,17 +38,9 @@ class AddToCartButton extends ConsumerWidget {
 
     return PrimaryButton(
       size: size,
-      leading: isAdding
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(size: 16),
-            )
-          : const Icon(LucideIcons.shoppingCart, size: 18),
-      onPressed: isAdding ? null : () => _handleAddToCart(ref),
-      child: showText
-          ? Text(isAdding ? 'Adding...' : 'Add to Cart')
-          : const SizedBox.shrink(),
+      leading: const Icon(LucideIcons.shoppingCart, size: 18),
+      onPressed: () => _handleAddToCart(ref),
+      child: showText ? const Text('Add to Cart') : const SizedBox.shrink(),
     );
   }
 

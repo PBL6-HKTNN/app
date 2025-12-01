@@ -42,12 +42,6 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
 
   @override
   void dispose() {
-    // Update current view on unmount
-    if (_enrollmentId != null) {
-      ref
-          .read(courseProgressProvider.notifier)
-          .updateCurrentView(widget.courseId, widget.lessonId, _enrollmentId!);
-    }
     super.dispose();
   }
 
