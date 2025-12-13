@@ -19,6 +19,8 @@ class Course extends EntityModel {
   final int numberOfReviews;
   final double averageRating;
   final List<Module>? modules;
+  final bool? isEnrolled;
+  final bool? isRequestedBanned;
 
   Course({
     required this.instructorId,
@@ -37,6 +39,8 @@ class Course extends EntityModel {
     required this.modules,
     required super.id,
     required super.createdAt,
+    this.isEnrolled,
+    this.isRequestedBanned,
     super.createdBy,
     super.updatedAt,
     super.updatedBy,
@@ -72,6 +76,8 @@ class Course extends EntityModel {
       modules: (json['modules'] as List<dynamic>?)
           ?.map((module) => Module.fromJson(module as Map<String, dynamic>))
           .toList(),
+      isEnrolled: json['isEnrolled'] as bool?,
+      isRequestedBanned: json['isRequestedBanned'] as bool?,
     );
   }
 
@@ -94,6 +100,8 @@ class Course extends EntityModel {
       'numberOfReviews': numberOfReviews,
       'averageRating': averageRating,
       'modules': modules?.map((module) => module.toJson()).toList(),
+      'isEnrolled': isEnrolled,
+      'isRequestedBanned': isRequestedBanned,
     };
   }
 }

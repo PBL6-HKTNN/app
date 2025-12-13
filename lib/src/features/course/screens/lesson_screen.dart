@@ -33,6 +33,18 @@ class LessonScreen extends ConsumerStatefulWidget {
 class _LessonScreenState extends ConsumerState<LessonScreen>
     with CourseProgressMixin {
   String? _enrollmentId;
+  bool _askedResumeDialog = false;
+  int? _resumePositionMs;
+  int? _lastSentWatchedMs;
+  String _formatTime(int seconds) {
+    final dur = Duration(seconds: seconds);
+    final h = dur.inHours;
+    final m = dur.inMinutes % 60;
+    final s = dur.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
 
   @override
   void initState() {
@@ -176,6 +188,61 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
           child: enrollmentAsync.when(
             data: (enrollmentCheck) {
               _enrollmentId = enrollmentCheck.enrollment?.id;
+              final currentViewId = enrollmentCheck.enrollment?.currentView;
+              final watchedSeconds = enrollmentCheck.enrollment?.watchedSeconds;
+              final isVideo = lesson.lessonType == LessonType.video;
+              // Show resume dialog for video lesson if currentView and watchedSeconds exist
+              if (!_askedResumeDialog &&
+                  isVideo &&
+                  currentViewId != null &&
+                  currentViewId == lesson.id &&
+                  (watchedSeconds ?? 0) > 0) {
+                _askedResumeDialog = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  // Show dialog
+                  final choice = await showDialog<bool>(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (dialogCtx) => AlertDialog(
+                      title: const Text('Resume Video'),
+                      content: Text(
+                        'Resume at ${_formatTime(watchedSeconds ?? 0)}?',
+                      ),
+                      actions: [
+                        Button(
+                          style: ButtonStyle.ghost(),
+                          onPressed: () => Navigator.of(dialogCtx).pop(false),
+                          child: const Text('Start from Beginning'),
+                        ),
+                        Button(
+                          style: ButtonStyle.primary(),
+                          onPressed: () => Navigator.of(dialogCtx).pop(true),
+                          child: const Text('Resume'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (context.mounted && choice == true) {
+                    setState(() {
+                      _resumePositionMs = (watchedSeconds ?? 0) * 1000;
+                    });
+                  }
+                });
+              }
+              // Ensure current view is updated on entry with enrolled watchedSeconds if any
+              if (_enrollmentId != null) {
+                final int? sendSeconds =
+                    (enrollmentCheck.enrollment?.watchedSeconds ?? 0) > 0
+                    ? (enrollmentCheck.enrollment!.watchedSeconds!)
+                    : null;
+                updateCurrentView(
+                  widget.courseId,
+                  lesson.id,
+                  _enrollmentId!,
+                  sendSeconds,
+                );
+              }
+
               return _buildLessonContent(
                 context,
                 ref,
@@ -239,8 +306,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
       case LessonType.video:
         return VideoView(
           lesson: lesson,
+          initialPositionMs: _resumePositionMs,
           onProgressUpdate: enrollmentId != null
               ? (currentTime, duration) {
+                  // Track video progress
                   ref
                       .read(courseProgressProvider.notifier)
                       .trackVideoProgress(
@@ -250,6 +319,19 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                         widget.lessonId,
                         enrollmentId,
                       );
+                  // Send updateCurrentView with watchedSeconds every 15s
+                  final ms = currentTime.round();
+                  if (_lastSentWatchedMs == null ||
+                      (ms - _lastSentWatchedMs!).abs() >= 15000) {
+                    _lastSentWatchedMs = ms;
+                    final secondsToSend = (ms ~/ 1000);
+                    updateCurrentView(
+                      widget.courseId,
+                      widget.lessonId,
+                      enrollmentId,
+                      secondsToSend,
+                    );
+                  }
                 }
               : null,
         );

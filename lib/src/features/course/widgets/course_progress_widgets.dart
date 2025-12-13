@@ -264,11 +264,12 @@ mixin CourseProgressMixin<T extends ConsumerStatefulWidget>
   void updateCurrentView(
     String courseId,
     String lessonId,
-    String enrollmentId,
-  ) {
+    String enrollmentId, [
+    int? watchedSeconds,
+  ]) {
     ref
         .read(courseProgressProvider.notifier)
-        .updateCurrentView(courseId, lessonId, enrollmentId);
+        .updateCurrentView(courseId, lessonId, enrollmentId, watchedSeconds);
   }
 
   void loadCompletedLessons(String enrollmentId) {

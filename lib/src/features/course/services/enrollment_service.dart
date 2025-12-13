@@ -198,11 +198,16 @@ class EnrollmentService {
   Future<ApiRes<Enrollment>> updateCurrentView({
     required String courseId,
     required String currentLessonId,
+    int? watchedSeconds,
   }) async {
     try {
       final response = await _apiClient.post(
         ApiRoutes.ENROLLMENT.updateCurrentView(),
-        body: {'courseId': courseId, 'currentLessonId': currentLessonId},
+        body: {
+          'courseId': courseId,
+          'currentLessonId': currentLessonId,
+          if (watchedSeconds != null) 'watchedSeconds': watchedSeconds,
+        },
       );
       return ApiRes<Enrollment>.fromJson(
         response,

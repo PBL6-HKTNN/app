@@ -1,9 +1,12 @@
 import 'package:codemy_app/src/core/models/entity.dart';
+import 'package:codemy_app/src/features/course/enums/enrollment.dart';
 
 class Enrollment extends EntityModel {
   final String? enrollmentId;
-  final int progressStatus;
-  final int enrollmentStatus;
+  final ProgressStatus progressStatus;
+  final EnrollmentStatus enrollmentStatus;
+  final String? currentView;
+  final int? watchedSeconds;
   final String? lessonId;
   final DateTime? completionDate;
   final String? certificateUrl;
@@ -12,6 +15,8 @@ class Enrollment extends EntityModel {
   Enrollment(
     this.enrollmentId,
     this.progressStatus,
+    this.currentView,
+    this.watchedSeconds,
     this.lessonId,
     this.completionDate,
     this.certificateUrl,
@@ -27,8 +32,10 @@ class Enrollment extends EntityModel {
       'id': id,
       'createdAt': createdAt?.toIso8601String(),
       'enrollmentId': enrollmentId,
-      'progressStatus': progressStatus,
-      'enrollmentStatus': enrollmentStatus,
+      'progressStatus': progressStatus.index,
+      'enrollmentStatus': enrollmentStatus.index,
+      'currentView': currentView,
+      'watchedSeconds': watchedSeconds,
       'lessonId': lessonId,
       'completionDate': completionDate?.toIso8601String(),
       'certificateUrl': certificateUrl,
@@ -39,7 +46,9 @@ class Enrollment extends EntityModel {
   factory Enrollment.fromJson(Map<String, dynamic> json) {
     return Enrollment(
       json['enrollmentId'] as String?,
-      json['progressStatus'] as int,
+      progressStatusFromValue(json['progressStatus'] as int? ?? 0),
+      json['currentView'] as String?,
+      json['watchedSeconds'] as int?,
       json['lessonId'] as String?,
       json['completionDate'] != null
           ? DateTime.parse(json['completionDate'] as String)
@@ -48,7 +57,7 @@ class Enrollment extends EntityModel {
       json['certificateExpiryDate'] != null
           ? DateTime.parse(json['certificateExpiryDate'] as String)
           : null,
-      json['enrollmentStatus'] as int,
+      enrollmentStatusFromValue(json['enrollmentStatus'] as int? ?? 0),
       id: json['id'] as String,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)

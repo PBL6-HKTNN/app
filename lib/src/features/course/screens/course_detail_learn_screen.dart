@@ -1,9 +1,12 @@
+import 'package:codemy_app/src/features/course/enums/enrollment.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../../utils/safe_pop.dart';
 import '../../user/providers/auth_providers.dart';
+import '../models/entities/lesson.dart';
+import '../models/entities/module.dart';
 import '../providers/course_content_provider.dart';
 import '../providers/enrollment_provider.dart';
 import '../widgets/course_content_list.dart';
@@ -45,10 +48,38 @@ class CourseDetailLearnScreen extends ConsumerWidget {
         final modules = content.modules;
         final enrollmentId = enrollmentAsync.asData?.value.enrollment?.id;
         final enrollment = enrollmentAsync.asData?.value.enrollment;
+        // Find current viewed lesson from enrollment
+        final currentLessonId = enrollment?.lessonId;
+        Lesson? currentLesson;
+        Module? currentModule;
+        if (currentLessonId != null) {
+          for (final module in modules) {
+            if (module.lessons == null) continue;
+            for (final lesson in module.lessons!) {
+              if (lesson.id == currentLessonId) {
+                currentLesson = lesson;
+                currentModule = module;
+                break;
+              }
+            }
+            if (currentLesson != null) break;
+          }
+        }
         final theme = Theme.of(context);
 
         // Calculate progress based on enrollment progressStatus
-        final progressText = _getProgressText(enrollment?.progressStatus ?? 0);
+        final dynamic rawProgress = enrollment?.progressStatus;
+        ProgressStatus parsedProgress;
+        if (rawProgress == null) {
+          parsedProgress = ProgressStatus.notStarted;
+        } else if (rawProgress is ProgressStatus) {
+          parsedProgress = rawProgress;
+        } else if (rawProgress is int) {
+          parsedProgress = progressStatusFromValue(rawProgress);
+        } else {
+          parsedProgress = ProgressStatus.notStarted;
+        }
+        final progressText = _getProgressText(parsedProgress);
 
         return Scaffold(
           backgroundColor: theme.colorScheme.background,
@@ -106,6 +137,69 @@ class CourseDetailLearnScreen extends ConsumerWidget {
                   ),
 
                   const Gap(24),
+
+                  // Resume current lesson card (if present)
+                  if (currentLesson != null && currentModule != null) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Continue where you left off',
+                                    style: theme.typography.h4,
+                                  ),
+                                  const Gap(8),
+                                  Text(
+                                    currentModule.title,
+                                    style: theme.typography.small,
+                                  ),
+                                  const Gap(6),
+                                  Text(
+                                    currentLesson.title,
+                                    style: theme.typography.small.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const Gap(6),
+                                  Text(
+                                    progressText,
+                                    style: theme.typography.small.copyWith(
+                                      color: theme.colorScheme.mutedForeground,
+                                    ),
+                                  ),
+                                  const Gap(12),
+                                  Button.primary(
+                                    onPressed: () => _handleLessonNavigate(
+                                      context,
+                                      courseId,
+                                      currentModule!.id,
+                                      currentLesson!.id,
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(LucideIcons.play, size: 18),
+                                        Gap(8),
+                                        Text('Resume'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Gap(24),
+                  ],
 
                   // Course overview
                   Card(
@@ -324,14 +418,14 @@ class CourseDetailLearnScreen extends ConsumerWidget {
     }
   }
 
-  String _getProgressText(int progressStatus) {
+  String _getProgressText(ProgressStatus progressStatus) {
     switch (progressStatus) {
-      case 0: // NOT_STARTED
+      case ProgressStatus.notStarted:
         return 'Not Started';
-      case 1: // IN_PROGRESS
-        return '50% Complete'; // Could be enhanced to show actual progress
-      case 2: // COMPLETED
-        return '100% Complete';
+      case ProgressStatus.inProgress:
+        return 'In Progress'; // Could be enhanced to show actual progress
+      case ProgressStatus.completed:
+        return 'Completed';
       default:
         return 'Not Started';
     }

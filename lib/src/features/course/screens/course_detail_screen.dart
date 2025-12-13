@@ -7,6 +7,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../../../utils/safe_pop.dart';
 import '../../payment/widgets/add_to_cart_button.dart';
 import '../../user/providers/auth_providers.dart';
+import '../enums/course_status.dart';
 import '../providers/course_content_provider.dart';
 import '../providers/enrollment_provider.dart';
 import '../providers/wishlist_provider.dart';
@@ -79,6 +80,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
         final thumbnail = course.thumbnail;
         final modules = content.modules;
 
+        // Course status checks
+        final isDraft = course.status == CourseStatus.draft;
+        final isPublished = course.status == CourseStatus.published;
+        final isArchived = course.status == CourseStatus.archived;
+
         // Check enrollment and wishlist status
         final isEnrolled = enrollmentAsync.when(
           data: (enrollment) => enrollment.success,
@@ -122,6 +128,61 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                     ],
                   ),
                   const Gap(16),
+
+                  // Status notification banners
+                  if (isDraft)
+                    Card(
+                      fillColor: theme.colorScheme.destructive.withOpacity(0.1),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              LucideIcons.draftingCompass,
+                              color: theme.colorScheme.destructive,
+                              size: 20,
+                            ),
+                            const Gap(12),
+                            Expanded(
+                              child: Text(
+                                'This course is in draft status and is not available for purchase.',
+                                style: theme.typography.small.copyWith(
+                                  color: theme.colorScheme.destructive,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (isArchived)
+                    Card(
+                      fillColor: theme.colorScheme.muted.withOpacity(0.5),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              LucideIcons.lock,
+                              color: theme.colorScheme.mutedForeground,
+                              size: 20,
+                            ),
+                            const Gap(12),
+                            Expanded(
+                              child: Text(
+                                'This course has been archived and is no longer available for enrollment.',
+                                style: theme.typography.small.copyWith(
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  if (isDraft || isArchived) const Gap(16),
+
                   Container(
                     height: 200,
                     width: double.infinity,
@@ -247,52 +308,22 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                     ),
                   if (modules.isNotEmpty) const Gap(24),
 
-                  // Action buttons based on enrollment status
-                  if (isEnrolled)
-                    Button.primary(
-                      onPressed: () =>
-                          context.push('/learn/${widget.courseId}'),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(LucideIcons.play, size: 18),
-                          Gap(8),
-                          Text('Continue Learning'),
-                        ],
-                      ),
-                    )
-                  else
-                    AddToCartButton(
-                      courseId: widget.courseId,
-                      size: ButtonSize.normal,
-                      onAdded: () {
-                        // Show success toast and optionally navigate to cart
-                        showToast(
-                          context: context,
-                          builder: (context, overlay) => SurfaceCard(
-                            child: Basic(
-                              title: const Text('Added to Cart'),
-                              subtitle: const Text(
-                                'Course has been added to your cart',
-                              ),
-                              leading: Icon(
-                                LucideIcons.check,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              trailing: Button.ghost(
-                                onPressed: () => context.push('/cart'),
-                                child: const Text('View Cart'),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  // Action buttons based on course status and enrollment status
+                  _buildActionButtons(
+                    context,
+                    ref,
+                    isEnrolled,
+                    isDraft,
+                    isArchived,
+                    isPublished,
+                    isGuest,
+                    isInWishlist,
+                  ),
 
                   const Gap(12),
 
-                  // Wishlist button
-                  if (!isGuest && !isEnrolled)
+                  // Wishlist button - only for published courses and non-enrolled users
+                  if (!isGuest && !isEnrolled && !isDraft && isPublished)
                     Button.secondary(
                       onPressed: () =>
                           _handleWishlistAction(context, ref, isInWishlist),
@@ -317,21 +348,22 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
 
                   const Gap(12),
 
-                  // Reviews button
-                  Button.ghost(
-                    onPressed: () => context.push(
-                      '/course/${course.id}/reviews',
-                      extra: isEnrolled,
+                  // Reviews button - only available for published courses
+                  if (isPublished)
+                    Button.ghost(
+                      onPressed: () => context.push(
+                        '/course/${course.id}/reviews',
+                        extra: isEnrolled,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(LucideIcons.messageSquare, size: 20),
+                          Gap(8),
+                          Text('View & Add Reviews'),
+                        ],
+                      ),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(LucideIcons.messageSquare, size: 20),
-                        Gap(8),
-                        Text('View & Add Reviews'),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -339,6 +371,100 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
         );
       },
     );
+  }
+
+  /// Builds action buttons based on course status and user enrollment
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    bool isEnrolled,
+    bool isDraft,
+    bool isArchived,
+    bool isPublished,
+    bool isGuest,
+    bool isInWishlist,
+  ) {
+    // Enrolled users: show "Continue Learning" for published and archived courses
+    if (isEnrolled && !isDraft) {
+      return Button.primary(
+        onPressed: () => context.push('/learn/${widget.courseId}'),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.play, size: 18),
+            Gap(8),
+            Text('Continue Learning'),
+          ],
+        ),
+      );
+    }
+
+    // Draft course: show notification, no action buttons
+    if (isDraft) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.muted,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            'This course is in draft and cannot be purchased',
+            style: Theme.of(context).typography.small,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    // Archived course: show notification, no purchase buttons
+    if (isArchived) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.muted,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            'This course is archived and no longer available for enrollment',
+            style: Theme.of(context).typography.small,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    // Published course - non-enrolled users
+    if (isPublished && !isEnrolled) {
+      return AddToCartButton(
+        courseId: widget.courseId,
+        size: ButtonSize.normal,
+        onAdded: () {
+          // Show success toast and optionally navigate to cart
+          showToast(
+            context: context,
+            builder: (context, overlay) => SurfaceCard(
+              child: Basic(
+                title: const Text('Added to Cart'),
+                subtitle: const Text('Course has been added to your cart'),
+                leading: Icon(
+                  LucideIcons.check,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                trailing: Button.ghost(
+                  onPressed: () => context.push('/cart'),
+                  child: const Text('View Cart'),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Fallback: no action button
+    return const SizedBox.shrink();
   }
 
   void _handleWishlistAction(

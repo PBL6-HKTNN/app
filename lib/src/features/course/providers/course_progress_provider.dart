@@ -161,8 +161,9 @@ class CourseProgressNotifier extends Notifier<CourseProgressState> {
   Future<void> updateCurrentView(
     String courseId,
     String currentLessonId,
-    String enrollmentId,
-  ) async {
+    String enrollmentId, [
+    int? watchedSeconds,
+  ]) async {
     // Optimistically update local state
     final newCurrentView = Map<String, String?>.from(
       state.currentViewByEnrollment,
@@ -175,6 +176,7 @@ class CourseProgressNotifier extends Notifier<CourseProgressState> {
       final response = await _enrollmentService.updateCurrentView(
         courseId: courseId,
         currentLessonId: currentLessonId,
+        watchedSeconds: watchedSeconds,
       );
 
       if (!response.isSuccess) {

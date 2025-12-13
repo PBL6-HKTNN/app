@@ -11,12 +11,14 @@ class VideoView extends ConsumerStatefulWidget {
   final Lesson? lesson;
   final String? lessonId;
   final void Function(double currentTime, double duration)? onProgressUpdate;
+  final int? initialPositionMs;
 
   const VideoView({
     super.key,
     this.lesson,
     this.lessonId,
     this.onProgressUpdate,
+    this.initialPositionMs,
   }) : assert(
          lesson != null || lessonId != null,
          'Either lesson or lessonId must be provided',
@@ -35,6 +37,7 @@ class _VideoViewState extends ConsumerState<VideoView> {
   double _progress = 0.0;
   String? _errorMessage;
   String? _currentContentUrl;
+  bool _appliedInitialSeek = false;
 
   @override
   void initState() {
@@ -120,6 +123,16 @@ class _VideoViewState extends ConsumerState<VideoView> {
       );
 
       _controller!.addListener(_onVideoPositionChanged);
+
+      // Apply initial seek if provided
+      if (widget.initialPositionMs != null && widget.initialPositionMs! > 0) {
+        try {
+          await _controller!.seekTo(
+            Duration(milliseconds: widget.initialPositionMs!),
+          );
+        } catch (_) {}
+        _appliedInitialSeek = true;
+      }
 
       setState(() {
         _initializing = false;
