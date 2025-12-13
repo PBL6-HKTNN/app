@@ -1,4 +1,5 @@
 import 'package:codemy_app/src/presentation/layouts/main_navigation_bar.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
@@ -176,26 +177,29 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                               ).typography.h4.copyWith(color: Colors.gray),
                             ),
                           )
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                        : material.RefreshIndicator(
+                            onRefresh: _loadCourses,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              itemCount: _filteredCourses.length,
+                              separatorBuilder: (_, __) => const Gap(12),
+                              itemBuilder: (context, index) {
+                                final course = _filteredCourses[index];
+                                final enrolledCourses =
+                                    enrolledCoursesAsync.value;
+                                final isJoined = _isCourseJoined(
+                                  course,
+                                  enrolledCourses,
+                                );
+                                return CourseCard(
+                                  course: course,
+                                  isJoined: isJoined,
+                                );
+                              },
                             ),
-                            itemCount: _filteredCourses.length,
-                            separatorBuilder: (_, __) => const Gap(12),
-                            itemBuilder: (context, index) {
-                              final course = _filteredCourses[index];
-                              final enrolledCourses =
-                                  enrolledCoursesAsync.value;
-                              final isJoined = _isCourseJoined(
-                                course,
-                                enrolledCourses,
-                              );
-                              return CourseCard(
-                                course: course,
-                                isJoined: isJoined,
-                              );
-                            },
                           ),
                   ),
                 ),

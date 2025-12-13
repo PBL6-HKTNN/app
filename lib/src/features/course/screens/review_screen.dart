@@ -172,11 +172,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                     ),
                                   );
                                 }
-                                return ListView.separated(
-                                  itemCount: reviews.length,
-                                  separatorBuilder: (_, __) => const Gap(12),
-                                  itemBuilder: (context, i) =>
-                                      ReviewItem(review: reviews[i]),
+                                return material.RefreshIndicator(
+                                  onRefresh: () async {
+                                    ref.invalidate(
+                                      reviewsByCourseProvider(widget.courseId),
+                                    );
+                                    ref.invalidate(
+                                      averageRatingProvider(widget.courseId),
+                                    );
+                                  },
+                                  child: ListView.separated(
+                                    itemCount: reviews.length,
+                                    separatorBuilder: (_, __) => const Gap(12),
+                                    itemBuilder: (context, i) =>
+                                        ReviewItem(review: reviews[i]),
+                                  ),
                                 );
                               },
                               loading: () => const Center(

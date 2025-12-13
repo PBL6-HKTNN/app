@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -242,31 +243,34 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
                       ? Center(child: CircularProgressIndicator(size: 28))
                       : _activeCourses.isEmpty
                       ? _buildEmptyState(context)
-                      : ListView.separated(
-                          controller: _scrollController,
-                          key: ValueKey(_currentTab),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          itemCount:
-                              _activeCourses.length +
-                              (_activeLoadingMore ? 1 : 0),
-                          separatorBuilder: (_, __) => const Gap(12),
-                          itemBuilder: (context, index) {
-                            if (index == _activeCourses.length) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(size: 24),
-                                ),
+                      : material.RefreshIndicator(
+                          onRefresh: _reloadCurrentTab,
+                          child: ListView.separated(
+                            controller: _scrollController,
+                            key: ValueKey(_currentTab),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemCount:
+                                _activeCourses.length +
+                                (_activeLoadingMore ? 1 : 0),
+                            separatorBuilder: (_, __) => const Gap(12),
+                            itemBuilder: (context, index) {
+                              if (index == _activeCourses.length) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: CircularProgressIndicator(size: 24),
+                                  ),
+                                );
+                              }
+                              return CourseCard(
+                                course: _activeCourses[index],
+                                isJoined: _currentTab == YourCoursesTab.joined,
                               );
-                            }
-                            return CourseCard(
-                              course: _activeCourses[index],
-                              isJoined: _currentTab == YourCoursesTab.joined,
-                            );
-                          },
+                            },
+                          ),
                         ),
                 ),
               ),
