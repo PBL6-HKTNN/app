@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+.env*
+!.env.example
+/tmp
+
+*.xlsx
+*.xls
+
+coverage
+unit_test_results

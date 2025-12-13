@@ -1,122 +1,177 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'package:codemy_app/router/app_router.dart';
+import 'package:codemy_app/src/locale/supported_lang.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+import 'l10n/app_localizations.dart';
+import 'src/core/conf/app_config.dart';
+import 'src/core/guards/auth_guard.dart';
+import 'src/features/user/services/google_auth_service.dart';
+import 'src/presentation/providers/locale_provider.dart';
+import 'src/presentation/providers/theme_provider.dart';
 
-  // This widget is the root of your application.
+class _DevHttpOverrides extends HttpOverrides {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = super.createHttpClient(context);
+    client.badCertificateCallback = (cert, host, port) => true; // Trust all
+    return client;
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  await AppConfig.load();
+  await GoogleAuthService.initialize();
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  // Initialize Stripe
+  final stripePkKey = dotenv.env['STRIPE_PK_KEY'];
+  if (stripePkKey != null && stripePkKey.isNotEmpty) {
+    Stripe.publishableKey = stripePkKey;
+    await Stripe.instance.applySettings();
+  }
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  // Enable trusting self-signed certs only in debug/dev if env flag set
+  final allowSelfSigned =
+      (dotenv.env['ALLOW_SELF_SIGNED_CERTS']?.toLowerCase() == 'true');
+  if (!kIsWeb && allowSelfSigned && kDebugMode) {
+    HttpOverrides.global = _DevHttpOverrides();
+    HttpClient.enableTimelineLogging = true;
+  }
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class MyApp extends ConsumerStatefulWidget {
+  const MyApp({super.key});
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  @override
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize auth state from persistent storage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initializeAuthState(ref);
+    });
+    // Initialize theme from persistent storage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(themeModeProvider.notifier).initializeTheme();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    final locale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    // Convert ShadcnThemeMode to ThemeMode for ShadcnApp
+    ThemeMode appThemeMode;
+    switch (themeMode) {
+      case ShadcnThemeMode.light:
+        appThemeMode = ThemeMode.light;
+        break;
+      case ShadcnThemeMode.dark:
+        appThemeMode = ThemeMode.dark;
+        break;
+      case ShadcnThemeMode.system:
+        appThemeMode = ThemeMode.system;
+        break;
+    }
+
+    return ShadcnApp.router(
+      title: 'CodeMy App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorSchemes.lightDefaultColor,
+        radius: 0.5,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+      darkTheme: ThemeData(
+        colorScheme: ColorSchemes.darkDefaultColor,
+        radius: 0.5,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      themeMode: appThemeMode,
+      locale: locale,
+      routerConfig: appRouter,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: SupportedLang().toLocaleList(),
     );
   }
 }
+
+// import 'package:shadcn_flutter/shadcn_flutter.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'src/features/user/screens/user_profile_screen.dart';
+
+// void main() {
+//   runApp(const ProviderScope(child: MyApp()));
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ShadcnApp(
+//       debugShowCheckedModeBanner: false,
+//       title: 'Profile Demo',
+//       theme: ThemeData(colorScheme: ColorSchemes.lightBlue, radius: 0.5),
+//       home: const ProfileScreen(),
+//     );
+//   }
+// }
+//   @override
+//   Widget build(BuildContext context) {
+//     return ShadcnApp.router(
+//       title: 'CodeMy App',
+//       theme: ThemeData(colorScheme: ColorSchemes.lightBlue, radius: 0.5),
+//       darkTheme: ThemeData(colorScheme: ColorSchemes.darkBlue, radius: 0.5),
+//       themeMode: ThemeMode.system,
+//       routerConfig: appRouter,
+//     );
+//   }
+// }
+
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:shadcn_flutter/shadcn_flutter.dart';
+// import 'src/features/course/screens/course_list_screen.dart';
+// import 'src/features/course/routes/course_routes.dart';
+
+// void main() {
+//   runApp(const ProviderScope(child: MyApp()));
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ShadcnApp(
+//       title: 'Course Listing App',
+//       themeMode: ThemeMode.light,
+//       onGenerateRoute: generateRoute, // Sử dụng hàm từ course_routes.dart
+//       builder: (context, child) {
+//         return DrawerOverlay(child: child!);
+//       },
+//       home: const CourseListScreen(),
+//       theme: ThemeData(
+//         colorScheme: ColorSchemes.lightDefaultColor,
+//         radius: 0.5,
+//       ),
+//     );
+//   }
+// }
