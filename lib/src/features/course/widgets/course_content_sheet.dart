@@ -1,12 +1,11 @@
-import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
-import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
-import 'package:codemy_app/src/features/course/models/entities/module.dart';
 import 'package:codemy_app/src/features/course/providers/course_content_provider.dart';
+import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
+import 'package:codemy_app/src/features/course/widgets/course_content_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class CourseContentSheet extends ConsumerStatefulWidget {
+class CourseContentSheet extends ConsumerWidget {
   final String courseId;
   final String? currentModuleId;
   final String? currentLessonId;
@@ -19,46 +18,13 @@ class CourseContentSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CourseContentSheet> createState() => _CourseContentSheetState();
-}
-
-class _CourseContentSheetState extends ConsumerState<CourseContentSheet> {
-  late List<TreeNode<dynamic>> _treeItems;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeTreeItems();
-  }
-
-  @override
-  void didUpdateWidget(covariant CourseContentSheet oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.courseId != widget.courseId ||
-        oldWidget.currentModuleId != widget.currentModuleId ||
-        oldWidget.currentLessonId != widget.currentLessonId) {
-      _initializeTreeItems();
-    }
-  }
-
-  void _initializeTreeItems() {
-    final courseContent = ref.read(courseContentProvider(widget.courseId));
-    courseContent.whenData((content) {
-      if (mounted) {
-        setState(() {
-          _treeItems = _buildTreeNodes(
-            content.modules,
-            selectedModuleId: widget.currentModuleId,
-            selectedLessonId: widget.currentLessonId,
-          );
-        });
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final courseContent = ref.watch(courseContentProvider(widget.courseId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final courseContent = ref.watch(courseContentProvider(courseId));
+    final enrollmentAsync = ref.watch(courseEnrollmentProvider(courseId));
+    final enrollmentId = enrollmentAsync.maybeWhen(
+      data: (data) => data.enrollment?.id,
+      orElse: () => null,
+    );
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -69,93 +35,51 @@ class _CourseContentSheetState extends ConsumerState<CourseContentSheet> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Course Content').large().medium()),
-              TextButton(
-                density: ButtonDensity.icon,
-                child: const Icon(Icons.close),
-                onPressed: () => closeSheet(context),
+              Text('Course Content', style: Theme.of(context).typography.h3),
+              const Spacer(),
+              Button.ghost(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Icon(RadixIcons.cross1),
               ),
             ],
           ),
-          const Gap(8),
-          Text('Navigate through course modules and lessons.').muted(),
           const Gap(16),
-          SizedBox(
-            height: 400, // Fixed height for the tree view
-            child: courseContent.when(
-              data: (content) => TreeView<dynamic>(
-                shrinkWrap: true,
-                recursiveSelection: false,
-                nodes: _treeItems,
-                branchLine: BranchLine.path,
-                onSelectionChanged: TreeView.defaultSelectionHandler(
-                  _treeItems,
-                  (value) {
-                    setState(() {
-                      _treeItems = value;
-                    });
-                  },
-                ),
-                builder: (context, node) {
-                  final data = node.data;
-                  if (data is Module) {
-                    return TreeItemView(
-                      onPressed: () {},
-                      leading: Icon(
-                        node.expanded
-                            ? BootstrapIcons.folder2Open
-                            : BootstrapIcons.folder2,
-                      ),
-                      onExpand: TreeView.defaultItemExpandHandler(
-                        _treeItems,
-                        node,
-                        (value) {
-                          setState(() {
-                            _treeItems = value;
-                          });
-                        },
-                      ),
-                      child: Text(data.title),
-                    );
-                  }
-
-                  if (data is Lesson) {
-                    return TreeItemView(
-                      onPressed: () => _navigateToLesson(context, data),
-                      leading: _getLessonIcon(data.lessonType),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(data.title),
-                          Text(
-                            '${_getLessonTypeText(data.lessonType)} • ${data.duration}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return TreeItemView(child: Text('${node.data}'));
+          courseContent.when(
+            data: (content) => Expanded(
+              child: CourseContentList(
+                modules: content.modules,
+                courseId: courseId,
+                enrollmentId: enrollmentId,
+                currentLessonId: currentLessonId,
+                defaultExpandedModuleId: currentModuleId,
+                onLessonSelect: (moduleId, lessonId) {
+                  Navigator.of(context).pop();
+                  context.go('/learn/$courseId/$moduleId/$lessonId');
                 },
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
+            ),
+            loading: () => const Expanded(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, _) => Expanded(
+              child: Center(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(RadixIcons.exclamationTriangle, size: 40),
+                    const Icon(
+                      BootstrapIcons.exclamationTriangle,
+                      size: 32,
+                      color: Color(0xFFEF4444), // red-500
+                    ),
                     const Gap(12),
                     Text(
                       'Failed to load course content',
-                      style: Theme.of(
-                        context,
-                      ).typography.small.copyWith(color: Colors.red),
+                      style: Theme.of(context).typography.p,
+                    ),
+                    const Gap(8),
+                    Text(
+                      error.toString(),
+                      style: Theme.of(context).typography.small,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -166,58 +90,5 @@ class _CourseContentSheetState extends ConsumerState<CourseContentSheet> {
         ],
       ),
     );
-  }
-
-  List<TreeNode<dynamic>> _buildTreeNodes(
-    List<Module> modules, {
-    String? selectedModuleId,
-    String? selectedLessonId,
-  }) {
-    return modules.map((module) {
-      final lessons = module.lessons ?? <Lesson>[];
-      final isModuleSelected = module.id == selectedModuleId;
-      return TreeItem<dynamic>(
-        data: module,
-        expanded: true,
-        selected: isModuleSelected,
-        children: lessons
-            .map(
-              (lesson) => TreeItem<dynamic>(
-                data: lesson,
-                children: const [],
-                selected: lesson.id == selectedLessonId,
-              ),
-            )
-            .toList(),
-      );
-    }).toList();
-  }
-
-  Widget _getLessonIcon(LessonType type) {
-    switch (type) {
-      case LessonType.markdown:
-        return const Icon(BootstrapIcons.fileText);
-      case LessonType.video:
-        return const Icon(BootstrapIcons.playCircle);
-      case LessonType.quiz:
-        return const Icon(BootstrapIcons.questionCircle);
-    }
-  }
-
-  String _getLessonTypeText(LessonType type) {
-    switch (type) {
-      case LessonType.markdown:
-        return 'Reading';
-      case LessonType.video:
-        return 'Video';
-      case LessonType.quiz:
-        return 'Quiz';
-    }
-  }
-
-  void _navigateToLesson(BuildContext context, Lesson lesson) {
-    final moduleId = lesson.moduleId;
-    closeSheet(context); // Close the sheet first
-    context.go('/learn/${widget.courseId}/$moduleId/${lesson.id}');
   }
 }

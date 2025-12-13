@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -29,12 +30,10 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
   bool _joinedLoadingMore = false;
   bool _joinedHasMore = true;
   int _joinedCurrentPage = 0;
-  String? _joinedError;
 
   // Wishlist courses state
   List<Course> _wishlistCourses = [];
   bool _wishlistLoading = false;
-  String? _wishlistError;
 
   // Course service for fetching course details
   late final CourseService _courseService;
@@ -99,10 +98,6 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
         : false; // Wishlist doesn't have pagination
   }
 
-  String? get _activeError {
-    return _currentTab == YourCoursesTab.joined ? _joinedError : _wishlistError;
-  }
-
   String _emptyMessage() {
     return _currentTab == YourCoursesTab.joined
         ? 'You have not joined any courses yet'
@@ -125,7 +120,6 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
         _joinedLoading = true;
         _joinedCurrentPage = 0;
         _joinedHasMore = true;
-        _joinedError = null;
       }
     });
 
@@ -165,15 +159,12 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
         });
       } else {
         setState(() {
-          _joinedError =
-              response.error?.toString() ?? 'Failed to load joined courses';
           _joinedLoading = false;
           _joinedLoadingMore = false;
         });
       }
     } catch (error) {
       setState(() {
-        _joinedError = error.toString();
         _joinedLoading = false;
         _joinedLoadingMore = false;
       });
@@ -195,7 +186,6 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
 
     setState(() {
       _wishlistLoading = true;
-      _wishlistError = null;
     });
 
     try {
@@ -226,14 +216,11 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
         });
       } else {
         setState(() {
-          _wishlistError =
-              response.error?.toString() ?? 'Failed to load wishlist';
           _wishlistLoading = false;
         });
       }
     } catch (error) {
       setState(() {
-        _wishlistError = error.toString();
         _wishlistLoading = false;
       });
     }
@@ -254,35 +241,36 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
                   duration: const Duration(milliseconds: 250),
                   child: _activeLoading
                       ? Center(child: CircularProgressIndicator(size: 28))
-                      : _activeError != null
-                      ? _buildErrorState(context, _activeError!)
                       : _activeCourses.isEmpty
                       ? _buildEmptyState(context)
-                      : ListView.separated(
-                          controller: _scrollController,
-                          key: ValueKey(_currentTab),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          itemCount:
-                              _activeCourses.length +
-                              (_activeLoadingMore ? 1 : 0),
-                          separatorBuilder: (_, __) => const Gap(12),
-                          itemBuilder: (context, index) {
-                            if (index == _activeCourses.length) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(size: 24),
-                                ),
+                      : material.RefreshIndicator(
+                          onRefresh: _reloadCurrentTab,
+                          child: ListView.separated(
+                            controller: _scrollController,
+                            key: ValueKey(_currentTab),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemCount:
+                                _activeCourses.length +
+                                (_activeLoadingMore ? 1 : 0),
+                            separatorBuilder: (_, __) => const Gap(12),
+                            itemBuilder: (context, index) {
+                              if (index == _activeCourses.length) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: CircularProgressIndicator(size: 24),
+                                  ),
+                                );
+                              }
+                              return CourseCard(
+                                course: _activeCourses[index],
+                                isJoined: _currentTab == YourCoursesTab.joined,
                               );
-                            }
-                            return CourseCard(
-                              course: _activeCourses[index],
-                              isJoined: _currentTab == YourCoursesTab.joined,
-                            );
-                          },
+                            },
+                          ),
                         ),
                 ),
               ),
@@ -335,18 +323,6 @@ class _YourCoursesScreenState extends ConsumerState<YourCoursesScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context, String message) {
-    return Center(
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).typography.h4.copyWith(
-          color: Theme.of(context).colorScheme.destructive,
-        ),
       ),
     );
   }

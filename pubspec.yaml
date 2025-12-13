@@ -52,6 +52,7 @@ dependencies:
   video_player: ^2.10.0
   markdown_widget: ^2.3.2+8
   image_picker: ^0.8.7+5
+  flutter_stripe: ^11.5.0
 
 dev_dependencies:
   flutter_test:

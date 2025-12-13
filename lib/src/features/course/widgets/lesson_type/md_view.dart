@@ -1,9 +1,9 @@
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
+import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 import 'package:codemy_app/src/presentation/providers/theme_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:codemy_app/src/features/course/providers/lesson_provider.dart';
 
 class MdView extends ConsumerStatefulWidget {
   final Lesson? lesson;
@@ -71,27 +71,25 @@ class _MdViewState extends ConsumerState<MdView> {
             ),
           ),
           const Divider(),
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              child: lessonAsync.when(
-                data: (lesson) {
-                  final raw = lesson.contentUrl?.trim() ?? '';
-                  final md = raw.isEmpty
-                      ? 'Lesson content is not available yet.'
-                      : raw;
-                  return MarkdownBlock(
-                    data: md,
-                    config: isDark
-                        ? MarkdownConfig.darkConfig
-                        : MarkdownConfig.defaultConfig,
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, st) =>
-                    Center(child: Text('Failed to load lesson content: $err')),
-              ),
+          SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            child: lessonAsync.when(
+              data: (lesson) {
+                final raw = lesson.contentUrl?.trim() ?? '';
+                final md = raw.isEmpty
+                    ? 'Lesson content is not available yet.'
+                    : raw;
+                return MarkdownBlock(
+                  data: md,
+                  config: isDark
+                      ? MarkdownConfig.darkConfig
+                      : MarkdownConfig.defaultConfig,
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, st) =>
+                  Center(child: Text('Failed to load lesson content: $err')),
             ),
           ),
         ],

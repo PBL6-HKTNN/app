@@ -9,12 +9,14 @@ class QuizView extends ConsumerWidget {
   final Lesson lesson;
   final String courseId;
   final String moduleId;
+  final void Function(bool passed)? onQuizComplete;
 
   const QuizView({
     super.key,
     required this.lesson,
     required this.courseId,
     required this.moduleId,
+    this.onQuizComplete,
   });
 
   @override

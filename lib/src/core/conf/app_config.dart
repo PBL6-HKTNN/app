@@ -6,7 +6,7 @@ class AppConfig {
   final String googleClientId;
   final String googleServerClientId;
   final String googleClientSecret;
-
+  final String stripePkKey;
   static late AppConfig instance;
 
   AppConfig._internal(
@@ -15,6 +15,7 @@ class AppConfig {
     this.googleClientId,
     this.googleServerClientId,
     this.googleClientSecret,
+    this.stripePkKey,
   );
 
   factory AppConfig() {
@@ -23,6 +24,7 @@ class AppConfig {
     final googleClientId = dotenv.env['GOOGLE_CLIENT_ID'] ?? '';
     final googleServerClientId = dotenv.env['GOOGLE_SERVER_CLIENT_ID'] ?? '';
     final googleClientSecret = dotenv.env['GOOGLE_CLIENT_SECRET'] ?? '';
+    final stripePkKey = dotenv.env['STRIPE_PK_KEY'] ?? '';
 
     instance = AppConfig._internal(
       baseUrl,
@@ -30,6 +32,7 @@ class AppConfig {
       googleClientId,
       googleServerClientId,
       googleClientSecret,
+      stripePkKey,
     );
     return instance;
   }

@@ -80,3 +80,10 @@ final deleteLessonProvider = FutureProvider.autoDispose.family<String, String>((
   }
   return response.data!;
 });
+
+final checkLessonLockedProvider = FutureProvider.autoDispose
+    .family<Lesson?, String>((ref, lessonId) async {
+      final service = ref.read(lessonServiceProvider);
+      final response = await service.checkLessonLocked(lessonId);
+      return response.isSuccess ? response.data : null;
+    });

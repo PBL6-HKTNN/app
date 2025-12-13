@@ -1,12 +1,15 @@
 import 'package:codemy_app/src/presentation/layouts/main_navigation_bar.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../../utils/safe_pop.dart';
 import '../models/dto/course_requests.dart';
+import '../models/dto/enrollment_responses.dart';
 import '../models/entities/course.dart';
 import '../providers/category_provider.dart';
 import '../providers/course_provider.dart';
+import '../providers/enrollment_provider.dart';
 import '../widgets/course_card.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/filter_sheet.dart';
@@ -47,6 +50,13 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
     }
   }
 
+  bool _isCourseJoined(Course course, List<JoinedCourse>? enrolledCourses) {
+    if (enrolledCourses == null) return false;
+    return enrolledCourses.any(
+      (enrolledCourse) => enrolledCourse.id == course.id,
+    );
+  }
+
   List<Course> get _filteredCourses {
     return _allCourses.where((course) {
       final matchesQuery =
@@ -61,6 +71,7 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final enrolledCoursesAsync = ref.watch(enrolledCoursesProvider);
 
     return MainNavigationBar(
       child: DrawerOverlay(
@@ -94,7 +105,7 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                   child: Row(
                     children: [
                       Button.ghost(
-                        onPressed: () => context.pop(),
+                        onPressed: () => safePop(context),
                         child: const Icon(LucideIcons.arrowLeft),
                       ),
                       const Spacer(),
@@ -166,18 +177,29 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                               ).typography.h4.copyWith(color: Colors.gray),
                             ),
                           )
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                        : material.RefreshIndicator(
+                            onRefresh: _loadCourses,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              itemCount: _filteredCourses.length,
+                              separatorBuilder: (_, __) => const Gap(12),
+                              itemBuilder: (context, index) {
+                                final course = _filteredCourses[index];
+                                final enrolledCourses =
+                                    enrolledCoursesAsync.value;
+                                final isJoined = _isCourseJoined(
+                                  course,
+                                  enrolledCourses,
+                                );
+                                return CourseCard(
+                                  course: course,
+                                  isJoined: isJoined,
+                                );
+                              },
                             ),
-                            itemCount: _filteredCourses.length,
-                            separatorBuilder: (_, __) => const Gap(12),
-                            itemBuilder: (context, index) {
-                              return CourseCard(
-                                course: _filteredCourses[index],
-                              );
-                            },
                           ),
                   ),
                 ),

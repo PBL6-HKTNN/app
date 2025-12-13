@@ -17,6 +17,8 @@ class ApiRoutes {
   static final _QuizRoutes QUIZ = _QuizRoutes._();
   static final _WishlistRoutes WISHLIST = _WishlistRoutes._();
   static final _EnrollmentRoutes ENROLLMENT = _EnrollmentRoutes._();
+  static final _ReviewRoutes REVIEW = _ReviewRoutes._();
+  static final _PaymentRoutes PAYMENT = _PaymentRoutes._();
 
   // Legacy direct getters (backward compatibility)
   static String get login => AUTH.login;
@@ -96,6 +98,8 @@ class _LessonRoutes {
   String update(String lessonId) =>
       '${ApiRoutes.baseUrl}/Lesson/update/$lessonId';
   String delete(String lessonId) => '${ApiRoutes.baseUrl}/Lesson/$lessonId';
+  String checkLocked(String lessonId) =>
+      '${ApiRoutes.baseUrl}/Lesson/check-locked/$lessonId';
 }
 
 class _CategoryRoutes {
@@ -142,4 +146,41 @@ class _EnrollmentRoutes {
   String getCourse(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/getCourse/$courseId';
   String update() => '${ApiRoutes.baseUrl}/Enrollment/update';
+  String updateProgress() => '${ApiRoutes.baseUrl}/Enrollment/updateProgress';
+  String updateCurrentView() =>
+      '${ApiRoutes.baseUrl}/Enrollment/update-current-view';
+  String completedLessons(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Enrollment/lessons-completed/$enrollmentId';
+  String isEnrolled(String courseId) =>
+      '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
+}
+
+class _ReviewRoutes {
+  _ReviewRoutes._();
+
+  String get create => '${ApiRoutes.baseUrl}/Review';
+  String byCourse(String courseId) =>
+      '${ApiRoutes.baseUrl}/Review/course/$courseId';
+  String averageRating(String courseId) =>
+      '${ApiRoutes.baseUrl}/Review/course/$courseId/average';
+}
+
+class _PaymentRoutes {
+  _PaymentRoutes._();
+
+  // Cart routes
+  String get getCart => '${ApiRoutes.baseUrl}/Payment/getCart';
+  String addToCart(String courseId) =>
+      '${ApiRoutes.baseUrl}/Payment/addToCart/$courseId';
+  String removeFromCart(String courseId) =>
+      '${ApiRoutes.baseUrl}/Payment/removeFromCart/$courseId';
+
+  // Payment routes
+  String get createPayment => '${ApiRoutes.baseUrl}/Payment/createPayment';
+  String get getPayment => '${ApiRoutes.baseUrl}/Payment/payment';
+  String get listPayments => '${ApiRoutes.baseUrl}/Payment/list-payments';
+  String get updatePayment => '${ApiRoutes.baseUrl}/Payment/update-payment';
+  String get createPaymentIntent =>
+      '${ApiRoutes.baseUrl}/Payment/create-payment-intent';
+  String get webhook => '${ApiRoutes.baseUrl}/Payment/webhook';
 }

@@ -1,17 +1,20 @@
 import 'dart:io';
+
+import 'package:codemy_app/router/app_router.dart';
+import 'package:codemy_app/src/locale/supported_lang.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:codemy_app/src/locale/supported_lang.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:codemy_app/router/app_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+
 import 'l10n/app_localizations.dart';
+import 'src/core/conf/app_config.dart';
+import 'src/core/guards/auth_guard.dart';
+import 'src/features/user/services/google_auth_service.dart';
 import 'src/presentation/providers/locale_provider.dart';
 import 'src/presentation/providers/theme_provider.dart';
-import 'src/core/guards/auth_guard.dart';
-import 'src/core/conf/app_config.dart';
-import 'src/features/user/services/google_auth_service.dart';
 
 class _DevHttpOverrides extends HttpOverrides {
   @override
@@ -27,6 +30,14 @@ void main() async {
   await dotenv.load(fileName: '.env');
   await AppConfig.load();
   await GoogleAuthService.initialize();
+
+  // Initialize Stripe
+  final stripePkKey = dotenv.env['STRIPE_PK_KEY'];
+  if (stripePkKey != null && stripePkKey.isNotEmpty) {
+    Stripe.publishableKey = stripePkKey;
+    await Stripe.instance.applySettings();
+  }
+
   // Enable trusting self-signed certs only in debug/dev if env flag set
   final allowSelfSigned =
       (dotenv.env['ALLOW_SELF_SIGNED_CERTS']?.toLowerCase() == 'true');

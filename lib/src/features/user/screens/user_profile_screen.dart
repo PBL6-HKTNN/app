@@ -13,7 +13,6 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).user;
-    final canEdit = (user?.role ?? -1) == 2;
     final displayName = user?.name ?? 'Guest';
     final displayEmail = user?.email ?? '';
     final displayRole = _getRoleText(user?.role ?? -1);
@@ -166,26 +165,20 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Gap(24),
                 // Action Buttons
-                if (canEdit)
-                  Button.primary(
-                    onPressed: () {
-                      context.push('/profile/edit');
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(LucideIcons.pencil, size: 18),
-                        Gap(8),
-                        Text('Edit Profile'),
-                      ],
-                    ),
-                  )
-                else
-                  Button.ghost(
-                    onPressed: null,
-                    child: const Text('Editing available for Students only'),
+                Button.primary(
+                  onPressed: () {
+                    context.push('/profile/edit');
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(LucideIcons.pencil, size: 18),
+                      Gap(8),
+                      Text('Edit Profile'),
+                    ],
                   ),
+                ),
                 const Gap(24),
               ],
             ),

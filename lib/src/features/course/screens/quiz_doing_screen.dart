@@ -1,6 +1,6 @@
 import 'package:codemy_app/src/features/course/enums/quiz_question_type.dart';
-import 'package:codemy_app/src/features/course/models/dto/enrollment_requests.dart';
 import 'package:codemy_app/src/features/course/models/entities/quiz/quiz_question.dart';
+import 'package:codemy_app/src/features/course/providers/course_progress_provider.dart';
 import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
 import 'package:codemy_app/src/features/course/providers/quiz_provider.dart';
 import 'package:codemy_app/src/features/course/states/quiz_attempt_state.dart';
@@ -18,6 +18,7 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
   final String moduleId;
   final String lessonId;
   final String? quizId;
+  final void Function(bool passed)? onQuizComplete;
 
   const QuizDoingScreen({
     super.key,
@@ -25,6 +26,7 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
     required this.moduleId,
     required this.lessonId,
     this.quizId,
+    this.onQuizComplete,
   });
 
   @override
@@ -32,30 +34,27 @@ class QuizDoingScreen extends ConsumerStatefulWidget {
 }
 
 class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
-  /// Saves quiz progress using the proper enrollment ID
-  void _saveProgress({int progressStatus = 1}) {
-    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
-    enrollmentAsync.whenData((enrollmentCheck) {
-      if (enrollmentCheck.success && enrollmentCheck.enrollment != null) {
-        final payload = UpdateEnrollmentRequest(
-          enrollmentId: enrollmentCheck.enrollment!.id,
-          progressStatus: progressStatus,
-          lessonId: widget.lessonId,
-        );
-        ref.read(updateEnrollmentProvider(payload));
-      }
-    });
-  }
+  String? _enrollmentId;
 
   @override
   void dispose() {
-    // Save progress on unmount using proper enrollment ID
-    _saveProgress(progressStatus: 1); // In progress
+    // Update current view on unmount
+    if (_enrollmentId != null) {
+      ref
+          .read(courseProgressProvider.notifier)
+          .updateCurrentView(widget.courseId, widget.lessonId, _enrollmentId!);
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Set enrollment ID for dispose
+    final enrollmentAsync = ref.read(courseEnrollmentProvider(widget.courseId));
+    if (enrollmentAsync.hasValue && enrollmentAsync.value!.success) {
+      _enrollmentId = enrollmentAsync.value!.enrollment?.id;
+    }
+
     if (widget.quizId == null || widget.quizId!.isEmpty) {
       return Scaffold(
         headers: [
@@ -130,6 +129,24 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
     }
 
     if (state.isSubmitted && state.attemptResult != null) {
+      // Trigger progress callback when quiz is completed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.onQuizComplete != null) {
+          widget.onQuizComplete!(state.attemptResult!.passed);
+        }
+        // Mark lesson complete if marks exceed passing marks
+        if (_enrollmentId != null &&
+            state.attemptResult!.score > quiz.passingMarks) {
+          ref
+              .read(courseProgressProvider.notifier)
+              .markLessonComplete(
+                widget.courseId,
+                widget.lessonId,
+                _enrollmentId!,
+              );
+        }
+      });
+
       return SingleChildScrollView(
         child: ResultView(
           quiz: quiz,
@@ -363,7 +380,6 @@ class _QuizDoingScreenState extends ConsumerState<QuizDoingScreen> {
     );
 
     if (shouldExit == true) {
-      _saveProgress(progressStatus: 1);
       _goBack(context);
     }
   }

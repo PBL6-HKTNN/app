@@ -74,7 +74,8 @@ class _CourseContentViewState extends ConsumerState<CourseContentView> {
         final nodes = _treeItems;
 
         Widget tree = TreeView<dynamic>(
-          shrinkWrap: true,
+          shrinkWrap:
+              !widget.showHeader, // Shrink for inline usage, expand for panel
           recursiveSelection: false,
           nodes: nodes,
           branchLine: BranchLine.path,
@@ -178,6 +179,9 @@ class _CourseContentViewState extends ConsumerState<CourseContentView> {
               Expanded(child: tree),
             ],
           );
+        } else {
+          // When used inline (like in course detail), wrap in SingleChildScrollView
+          tree = SingleChildScrollView(child: tree);
         }
 
         return tree;

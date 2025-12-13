@@ -1,11 +1,16 @@
+import 'package:codemy_app/src/features/course/enums/enrollment.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../../utils/safe_pop.dart';
 import '../../user/providers/auth_providers.dart';
+import '../models/entities/lesson.dart';
+import '../models/entities/module.dart';
 import '../providers/course_content_provider.dart';
 import '../providers/enrollment_provider.dart';
-import '../widgets/course_content_view.dart';
+import '../widgets/course_content_list.dart';
 
 class CourseDetailLearnScreen extends ConsumerWidget {
   final String courseId;
@@ -38,195 +43,295 @@ class CourseDetailLearnScreen extends ConsumerWidget {
       loading: () =>
           const Scaffold(child: Center(child: CircularProgressIndicator())),
       error: (error, _) =>
-          _ErrorView(onBack: () => context.pop(), message: error.toString()),
+          _ErrorView(onBack: () => safePop(context), message: error.toString()),
       data: (content) {
         final course = content.course;
         final modules = content.modules;
+        final enrollmentId = enrollmentAsync.asData?.value.enrollment?.id;
+        final enrollment = enrollmentAsync.asData?.value.enrollment;
+        // Find current viewed lesson from enrollment
+        final currentLessonId = enrollment?.lessonId;
+        Lesson? currentLesson;
+        Module? currentModule;
+        if (currentLessonId != null) {
+          for (final module in modules) {
+            if (module.lessons == null) continue;
+            for (final lesson in module.lessons!) {
+              if (lesson.id == currentLessonId) {
+                currentLesson = lesson;
+                currentModule = module;
+                break;
+              }
+            }
+            if (currentLesson != null) break;
+          }
+        }
         final theme = Theme.of(context);
+
+        // Calculate progress based on enrollment progressStatus
+        final dynamic rawProgress = enrollment?.progressStatus;
+        ProgressStatus parsedProgress;
+        if (rawProgress == null) {
+          parsedProgress = ProgressStatus.notStarted;
+        } else if (rawProgress is ProgressStatus) {
+          parsedProgress = rawProgress;
+        } else if (rawProgress is int) {
+          parsedProgress = progressStatusFromValue(rawProgress);
+        } else {
+          parsedProgress = ProgressStatus.notStarted;
+        }
+        final progressText = _getProgressText(parsedProgress);
 
         return Scaffold(
           backgroundColor: theme.colorScheme.background,
           child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with back button
-                  Row(
-                    children: [
-                      Button.ghost(
-                        onPressed: () => context.go('/your-courses'),
-                        child: const Icon(LucideIcons.arrowLeft, size: 24),
-                      ),
-                      const Gap(12),
-                      Expanded(
-                        child: Text(
-                          'Learning: ${course.title}',
-                          style: theme.typography.h3,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+            child: material.RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(courseContentProvider(courseId));
+                ref.invalidate(courseEnrollmentProvider(courseId));
+              },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with back button
+                    Row(
+                      children: [
+                        Button.ghost(
+                          onPressed: () => context.go('/your-courses'),
+                          child: const Icon(LucideIcons.arrowLeft, size: 24),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const Gap(24),
-
-                  // Course progress card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(LucideIcons.bookOpen, size: 20),
-                              const Gap(8),
-                              Text(
-                                'Course Progress',
-                                style: theme.typography.h4,
-                              ),
-                            ],
+                        const Gap(12),
+                        Expanded(
+                          child: Text(
+                            'Learning: ${course.title}',
+                            style: theme.typography.h3,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const Gap(12),
-
-                          // Progress indicator
-                          LinearProgressIndicator(
-                            value: 0.0, // TODO: Calculate actual progress
-                            backgroundColor: theme.colorScheme.muted,
-                          ),
-                          const Gap(8),
-                          Text(
-                            '0% Complete', // TODO: Show actual progress
-                            style: theme.typography.small,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ),
 
-                  const Gap(24),
+                    const Gap(24),
 
-                  // Course overview
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Course Overview', style: theme.typography.h4),
-                          const Gap(12),
-                          if (course.description != null)
-                            Text(
-                              course.description!,
-                              style: theme.typography.small,
-                            ),
-                          const Gap(16),
-
-                          // Course stats
-                          Wrap(
-                            spacing: 16,
-                            runSpacing: 8,
-                            children: [
-                              Chip(
-                                leading: Icon(LucideIcons.clock),
-                                child: Text(course.duration),
-                              ),
-                              Chip(
-                                leading: Icon(LucideIcons.bookOpen),
-                                child: Text('${modules.length} modules'),
-                              ),
-                              Chip(
-                                leading: Icon(LucideIcons.star),
-                                child: Text(
-                                  course.averageRating.toStringAsFixed(1),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const Gap(24),
-
-                  // Course content
-                  if (modules.isNotEmpty) ...[
+                    // Course progress card
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Course Content', style: theme.typography.h4),
+                            Row(
+                              children: [
+                                Icon(LucideIcons.bookOpen, size: 20),
+                                const Gap(8),
+                                Text(
+                                  'Course Progress',
+                                  style: theme.typography.h4,
+                                ),
+                              ],
+                            ),
                             const Gap(12),
-                            CourseContentView(
-                              courseId: courseId,
-                              showHeader: false,
-                              onLessonTap: (lesson) => _handleLessonNavigate(
-                                context,
-                                courseId,
-                                lesson.moduleId,
-                                lesson.id,
+
+                            // Progress status
+                            Text(progressText, style: theme.typography.small),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Gap(24),
+
+                    // Resume current lesson card (if present)
+                    if (currentLesson != null && currentModule != null) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Continue where you left off',
+                                      style: theme.typography.h4,
+                                    ),
+                                    const Gap(8),
+                                    Text(
+                                      currentModule.title,
+                                      style: theme.typography.small,
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      currentLesson.title,
+                                      style: theme.typography.small.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      progressText,
+                                      style: theme.typography.small.copyWith(
+                                        color:
+                                            theme.colorScheme.mutedForeground,
+                                      ),
+                                    ),
+                                    const Gap(12),
+                                    Button.primary(
+                                      onPressed: () => _handleLessonNavigate(
+                                        context,
+                                        courseId,
+                                        currentModule!.id,
+                                        currentLesson!.id,
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(LucideIcons.play, size: 18),
+                                          Gap(8),
+                                          Text('Resume'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Gap(24),
+                    ],
+
+                    // Course overview
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Course Overview', style: theme.typography.h4),
+                            const Gap(12),
+                            if (course.description != null)
+                              Text(
+                                course.description!,
+                                style: theme.typography.small,
+                              ),
+                            const Gap(16),
+
+                            // Course stats
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 8,
+                              children: [
+                                Chip(
+                                  leading: Icon(LucideIcons.clock),
+                                  child: Text(course.duration),
+                                ),
+                                Chip(
+                                  leading: Icon(LucideIcons.bookOpen),
+                                  child: Text('${modules.length} modules'),
+                                ),
+                                Chip(
+                                  leading: Icon(LucideIcons.star),
+                                  child: Text(
+                                    course.averageRating.toStringAsFixed(1),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Gap(24),
+
+                    // Course content
+                    if (modules.isNotEmpty) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Course Content',
+                                style: theme.typography.h4,
+                              ),
+                              const Gap(12),
+                              CourseContentList(
+                                modules: modules,
+                                courseId: courseId,
+                                enrollmentId: enrollmentId,
+                                onLessonSelect: (moduleId, lessonId) =>
+                                    _handleLessonNavigate(
+                                      context,
+                                      courseId,
+                                      moduleId,
+                                      lessonId,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Gap(24),
+                    ],
+
+                    // Quick actions
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Quick Actions', style: theme.typography.h4),
+                            const Gap(12),
+
+                            Button.primary(
+                              onPressed: modules.isNotEmpty
+                                  ? () => _startFirstLesson(
+                                      context,
+                                      courseId,
+                                      modules,
+                                    )
+                                  : null,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.play, size: 18),
+                                  Gap(8),
+                                  Text('Start Learning'),
+                                ],
+                              ),
+                            ),
+
+                            const Gap(12),
+
+                            Button.ghost(
+                              onPressed: () =>
+                                  context.push('/course/$courseId/reviews'),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.messageSquare, size: 18),
+                                  Gap(8),
+                                  Text('View Reviews'),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const Gap(24),
                   ],
-
-                  // Quick actions
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Quick Actions', style: theme.typography.h4),
-                          const Gap(12),
-
-                          Button.primary(
-                            onPressed: modules.isNotEmpty
-                                ? () => _startFirstLesson(
-                                    context,
-                                    courseId,
-                                    modules,
-                                  )
-                                : null,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(LucideIcons.play, size: 18),
-                                Gap(8),
-                                Text('Start Learning'),
-                              ],
-                            ),
-                          ),
-
-                          const Gap(12),
-
-                          Button.ghost(
-                            onPressed: () =>
-                                context.push('/course/$courseId/reviews'),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(LucideIcons.messageSquare, size: 18),
-                                Gap(8),
-                                Text('View Reviews'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -289,7 +394,7 @@ class CourseDetailLearnScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Button.secondary(
-                      onPressed: () => context.pop(),
+                      onPressed: () => safePop(context),
                       child: const Text('Back to Courses'),
                     ),
                     const Gap(12),
@@ -321,6 +426,19 @@ class CourseDetailLearnScreen extends ConsumerWidget {
       final firstModule = modules.first;
       final firstLesson = firstModule.lessons!.first;
       context.push('/learn/$courseId/${firstModule.id}/${firstLesson.id}');
+    }
+  }
+
+  String _getProgressText(ProgressStatus progressStatus) {
+    switch (progressStatus) {
+      case ProgressStatus.notStarted:
+        return 'Not Started';
+      case ProgressStatus.inProgress:
+        return 'In Progress'; // Could be enhanced to show actual progress
+      case ProgressStatus.completed:
+        return 'Completed';
+      default:
+        return 'Not Started';
     }
   }
 }

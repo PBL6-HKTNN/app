@@ -118,39 +118,6 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeatureCard(String title, String description, IconData icon) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Wrap(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 32),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 10),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildQuickAction(
     BuildContext context,
     String title,

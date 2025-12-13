@@ -17,6 +17,7 @@ class _MainNavigationBarState extends State<MainNavigationBar> {
     final currentIndex = switch (currentPath) {
       '/user' => 2,
       '/courses' => 1,
+      '/cart' => 3,
       _ => 0,
     };
 
@@ -41,12 +42,16 @@ class _MainNavigationBarState extends State<MainNavigationBar> {
                 case 2:
                   context.push('/user');
                   break;
+                case 3:
+                  context.push('/cart');
+                  break;
               }
             },
             children: [
               _buildNavigationItem('Home', LucideIcons.house),
               _buildNavigationItem('Courses', LucideIcons.graduationCap),
               _buildNavigationItem('Profile', LucideIcons.user),
+              _buildNavigationItem('Cart', LucideIcons.shoppingCart),
             ],
           ),
         ],

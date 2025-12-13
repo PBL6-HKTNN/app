@@ -9,7 +9,7 @@ class User extends EntityModel {
   final String? profilePicture;
   final String? bio;
   final bool emailVerified;
-  final int totalCourses;
+  final int? totalCourses;
   final double? rating;
 
   const User({
@@ -21,7 +21,7 @@ class User extends EntityModel {
     required this.profilePicture,
     this.bio,
     required this.emailVerified,
-    required this.totalCourses,
+    this.totalCourses,
     this.rating,
     required super.id,
     required super.createdAt,
@@ -41,10 +41,14 @@ class User extends EntityModel {
       googleId: json['googleId'] as String,
       role: json['role'] as int,
       status: json['status'] as int,
-      profilePicture: json['profilePicture'] as String,
+      profilePicture: json['profilePicture'] != null
+          ? json['profilePicture'] as String
+          : '',
       bio: json['bio'] as String?,
       emailVerified: json['emailVerified'] as bool,
-      totalCourses: json['totalCourses'] as int,
+      totalCourses: json['totalCourses'] != null
+          ? json['totalCourses'] as int
+          : 0,
       rating: json['rating'] as double?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       createdBy: json['createdBy'] as String?,

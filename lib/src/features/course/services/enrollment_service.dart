@@ -113,4 +113,125 @@ class EnrollmentService {
       );
     }
   }
+
+  /// Check if user is enrolled in a course
+  Future<ApiRes<EnrollmentCheckResponse>> isEnrolled(String courseId) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.ENROLLMENT.isEnrolled(courseId),
+      );
+      return ApiRes<EnrollmentCheckResponse>.fromJson(
+        response,
+        (data) =>
+            EnrollmentCheckResponse.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to check enrollment',
+        tag: 'ENROLLMENT',
+        error: error,
+      );
+      return ApiRes<EnrollmentCheckResponse>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  /// Get completed lessons for an enrollment
+  Future<ApiRes<List<String>>> getCompletedLessons(String enrollmentId) async {
+    try {
+      final response = await _apiClient.get(
+        ApiRoutes.ENROLLMENT.completedLessons(enrollmentId),
+      );
+      return ApiRes<List<String>>.fromJson(
+        response,
+        (data) => (data as List<dynamic>).cast<String>(),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to get completed lessons',
+        tag: 'ENROLLMENT',
+        error: error,
+      );
+      return ApiRes<List<String>>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  /// Update enrollment progress (mark lesson complete)
+  Future<ApiRes<Enrollment>> updateEnrollmentProgress({
+    required String courseId,
+    required String lessonId,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.ENROLLMENT.updateProgress(),
+        body: {'courseId': courseId, 'lessonId': lessonId},
+      );
+      return ApiRes<Enrollment>.fromJson(
+        response,
+        (data) => Enrollment.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to update enrollment progress',
+        tag: 'ENROLLMENT',
+        error: error,
+      );
+      return ApiRes<Enrollment>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  /// Update current view (track which lesson user is currently viewing)
+  Future<ApiRes<Enrollment>> updateCurrentView({
+    required String courseId,
+    required String currentLessonId,
+    int? watchedSeconds,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.ENROLLMENT.updateCurrentView(),
+        body: {
+          'courseId': courseId,
+          'currentLessonId': currentLessonId,
+          if (watchedSeconds != null) 'watchedSeconds': watchedSeconds,
+        },
+      );
+      return ApiRes<Enrollment>.fromJson(
+        response,
+        (data) => Enrollment.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to update current view',
+        tag: 'ENROLLMENT',
+        error: error,
+      );
+      return ApiRes<Enrollment>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  /// Alias for getCompletedLessons to match web service naming
+  Future<ApiRes<List<String>>> getEnrolledCourseCompletedLessons(
+    String enrollmentId,
+  ) async {
+    return getCompletedLessons(enrollmentId);
+  }
 }

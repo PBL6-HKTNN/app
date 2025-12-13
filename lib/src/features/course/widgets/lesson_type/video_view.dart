@@ -10,12 +10,19 @@ import 'package:video_player/video_player.dart';
 class VideoView extends ConsumerStatefulWidget {
   final Lesson? lesson;
   final String? lessonId;
+  final void Function(double currentTime, double duration)? onProgressUpdate;
+  final int? initialPositionMs;
 
-  const VideoView({super.key, this.lesson, this.lessonId})
-    : assert(
-        lesson != null || lessonId != null,
-        'Either lesson or lessonId must be provided',
-      );
+  const VideoView({
+    super.key,
+    this.lesson,
+    this.lessonId,
+    this.onProgressUpdate,
+    this.initialPositionMs,
+  }) : assert(
+         lesson != null || lessonId != null,
+         'Either lesson or lessonId must be provided',
+       );
 
   @override
   ConsumerState<VideoView> createState() => _VideoViewState();
@@ -30,6 +37,7 @@ class _VideoViewState extends ConsumerState<VideoView> {
   double _progress = 0.0;
   String? _errorMessage;
   String? _currentContentUrl;
+  bool _appliedInitialSeek = false;
 
   @override
   void initState() {
@@ -116,6 +124,16 @@ class _VideoViewState extends ConsumerState<VideoView> {
 
       _controller!.addListener(_onVideoPositionChanged);
 
+      // Apply initial seek if provided
+      if (widget.initialPositionMs != null && widget.initialPositionMs! > 0) {
+        try {
+          await _controller!.seekTo(
+            Duration(milliseconds: widget.initialPositionMs!),
+          );
+        } catch (_) {}
+        _appliedInitialSeek = true;
+      }
+
       setState(() {
         _initializing = false;
       });
@@ -138,14 +156,23 @@ class _VideoViewState extends ConsumerState<VideoView> {
       return;
     }
 
+    final position = _controller!.value.position;
+    final total = _controller!.value.duration;
+
     setState(() {
-      _currentPosition = _controller!.value.position;
-      _isPlaying = _controller!.value.isPlaying;
-      final totalMillis = _totalDuration.inMilliseconds;
-      _progress = totalMillis > 0
-          ? (_currentPosition.inMilliseconds / totalMillis).clamp(0.0, 1.0)
+      _currentPosition = position;
+      _totalDuration = total;
+      _progress = total.inMilliseconds > 0
+          ? position.inMilliseconds / total.inMilliseconds
           : 0.0;
     });
+
+    if (widget.onProgressUpdate != null && total.inMilliseconds > 0) {
+      widget.onProgressUpdate!(
+        position.inMilliseconds.toDouble(),
+        total.inMilliseconds.toDouble(),
+      );
+    }
   }
 
   void _togglePlayPause() {

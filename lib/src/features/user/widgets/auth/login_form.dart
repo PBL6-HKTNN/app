@@ -3,8 +3,8 @@ import 'package:codemy_app/src/features/user/models/dto/auth/login.dart';
 import 'package:codemy_app/src/features/user/providers/auth_providers.dart';
 import 'package:codemy_app/src/locale/index.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import 'google_sign_in_button.dart';
 
@@ -48,21 +48,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     );
 
     await ref.read(authStateProvider.notifier).login(loginDto);
-
-    final authState = ref.read(authStateProvider);
-    if (!authState.isLoading &&
-        authState.requiresEmailVerification == true &&
-        mounted) {
-      context.go(
-        Uri(
-          path: '/verify',
-          queryParameters: {'email': loginDto.email},
-        ).toString(),
-      );
-    }
-    if (authState.isAuthenticated && mounted) {
-      context.go('/');
-    }
   }
 
   @override
@@ -71,7 +56,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     final authState = ref.watch(authStateProvider);
 
     ref.listen(authStateProvider, (previous, next) {
-      if (next.error != null) {
+      if (next.error != null && !next.isLoading) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -88,6 +73,15 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             ],
           ),
         );
+      } else if (!next.isLoading && next.requiresEmailVerification && mounted) {
+        context.go(
+          Uri(
+            path: '/verify',
+            queryParameters: {'email': _emailController.text.trim()},
+          ).toString(),
+        );
+      } else if (!next.isLoading && next.isAuthenticated && mounted) {
+        context.go('/');
       }
     });
 

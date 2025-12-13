@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../payment/widgets/add_to_cart_button.dart';
 import '../models/entities/course.dart';
 import '../models/entities/module.dart';
 
@@ -12,24 +13,20 @@ class CourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final modules = course.modules ?? <Module>[];
-    final totalLessons = modules.fold<int>(
-      0,
-      (sum, mod) => sum + (mod.numberOfLessons),
-    );
     final moduleCount = modules.isEmpty
         ? course.numberOfModules
         : modules.length;
     final description = course.description ?? 'No description provided yet.';
 
     return Card(
-      padding: const EdgeInsets.all(14),
-      child: Row(
+      padding: const EdgeInsets.all(16),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Thumbnail
           Container(
-            width: 90,
-            height: 64,
+            width: double.infinity,
+            height: 120,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: Theme.of(context).colorScheme.muted,
@@ -40,8 +37,8 @@ class CourseCard extends StatelessWidget {
                     child: Image.network(
                       course.thumbnail!,
                       fit: BoxFit.cover,
-                      width: 90,
-                      height: 64,
+                      width: double.infinity,
+                      height: 120,
                       errorBuilder: (context, error, stackTrace) => Center(
                         child: Text(
                           _getShortTitle(course.title),
@@ -49,6 +46,7 @@ class CourseCard extends StatelessWidget {
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.background,
                             fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
                       ),
@@ -61,6 +59,7 @@ class CourseCard extends StatelessWidget {
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.background,
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -68,79 +67,85 @@ class CourseCard extends StatelessWidget {
 
           const Gap(12),
 
-          // Nội dung khóa học
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tên khóa học
-                Text(
-                  course.title,
-                  style: Theme.of(context).typography.h4,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const Gap(4),
-
-                // Mô tả
-                Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.mutedForeground,
-                  ),
-                ),
-
-                const Gap(10),
-
-                // Thông tin phụ (duration, modules)
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 6,
-                  children: [
-                    _infoRow(icon: LucideIcons.clock, label: course.duration),
-                    _infoRow(
-                      icon: LucideIcons.bookOpen,
-                      label: '$moduleCount modules, $totalLessons lessons',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const Gap(12),
-
-          // Giá + nút
+          // Course content
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Course title
               Text(
-                '\$${course.price.toString()}',
+                course.title,
+                style: Theme.of(context).typography.h4,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const Gap(8),
+
+              // Description
+              Text(
+                description,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.foreground,
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.mutedForeground,
                 ),
               ),
-              const Gap(8),
-              PrimaryButton(
-                size: ButtonSize.small,
-                onPressed: () {
-                  if (isJoined) {
-                    context.push('/learn/${course.id}');
-                  } else {
-                    String source = 'all';
-                    final route = GoRouterState.of(context).uri.path;
-                    if (route.contains('wishlist')) {
-                      source = 'wishlist';
-                    }
-                    context.push('/courses/${course.id}?source=$source');
-                  }
-                },
-                child: Text(isJoined ? 'Learn' : 'View'),
+
+              const Gap(12),
+
+              // Info rows
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _infoRow(icon: LucideIcons.clock, label: course.duration),
+                  _infoRow(
+                    icon: LucideIcons.bookOpen,
+                    label: '$moduleCount modules',
+                  ),
+                ],
+              ),
+
+              const Gap(16),
+
+              // Price and buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '\$${course.price.toString()}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Theme.of(context).colorScheme.foreground,
+                      ),
+                    ),
+                  ),
+                  // Buttons
+                  OutlineButton(
+                    size: ButtonSize.small,
+                    onPressed: () {
+                      context.push('/courses/${course.id}');
+                    },
+                    child: const Text('View'),
+                  ),
+                  const Gap(8),
+                  if (isJoined)
+                    PrimaryButton(
+                      size: ButtonSize.small,
+                      onPressed: () {
+                        context.push('/learn/${course.id}');
+                      },
+                      child: const Text('Learn'),
+                    )
+                  else
+                    AddToCartButton(
+                      courseId: course.id,
+                      size: ButtonSize.small,
+                      showText: false,
+                    ),
+                ],
               ),
             ],
           ),
