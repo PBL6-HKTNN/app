@@ -118,6 +118,21 @@ class UserMenuScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  if (user.role == 2) ...[
+                    const Divider(height: 1),
+                    Button.ghost(
+                      onPressed: () => context.push('/instructor/courses'),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.users, size: 20),
+                          const SizedBox(width: 12),
+                          const Text('My Instructor Courses'),
+                          const Spacer(),
+                          Icon(LucideIcons.chevronRight, size: 16),
+                        ],
+                      ),
+                    ),
+                  ],
                   const Divider(height: 1),
                   Button.ghost(
                     onPressed: () => context.push('/settings'),
@@ -174,11 +189,11 @@ class UserMenuScreen extends ConsumerWidget {
       case 0:
         return 'Admin';
       case 1:
-        return 'Instructor';
+        return 'Moderator';
       case 2:
-        return 'Student';
+        return 'Instructor';
       default:
-        return 'Unknown';
+        return 'Student';
     }
   }
 }

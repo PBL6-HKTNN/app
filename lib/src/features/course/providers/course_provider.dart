@@ -62,3 +62,22 @@ final allCoursesProvider = FutureProvider<List<Course>>((ref) async {
     throw Exception(response.error?.toString() ?? 'Failed to load courses');
   }
 });
+
+/// Provider for instructor's courses
+final instructorCoursesProvider = FutureProvider.autoDispose
+    .family<List<Course>, String>((ref, instructorId) async {
+      final service = ref.read(courseServiceProvider);
+      final params = CourseQueryParams(
+        instructorId: instructorId,
+        pageSize: 100,
+      );
+      final response = await service.getCourses(queryParams: params);
+
+      if (response.isSuccess && response.data != null) {
+        return response.data!;
+      } else {
+        throw Exception(
+          response.error?.toString() ?? 'Failed to load instructor courses',
+        );
+      }
+    });

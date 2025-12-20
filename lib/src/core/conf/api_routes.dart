@@ -101,6 +101,8 @@ class _LessonRoutes {
   String delete(String lessonId) => '${ApiRoutes.baseUrl}/Lesson/$lessonId';
   String checkLocked(String lessonId) =>
       '${ApiRoutes.baseUrl}/Lesson/check-locked/$lessonId';
+  String checkLessonVideo(String lessonId) =>
+      '${ApiRoutes.baseUrl}/Lesson/$lessonId/video-checkpoint';
 }
 
 class _CategoryRoutes {
@@ -126,6 +128,9 @@ class _QuizRoutes {
   String delete(String quizId) => '${ApiRoutes.baseUrl}/Quiz/$quizId';
   String results(String lessonId) =>
       '${ApiRoutes.baseUrl}/Quiz/results/$lessonId';
+  String createQuizInVideo() => '${ApiRoutes.baseUrl}/Quiz/create-quiz';
+  String submitQuizInVideo() =>
+      '${ApiRoutes.baseUrl}/Quiz/submit/quiz-in-video';
   String begin(String quizId) => '${ApiRoutes.baseUrl}/Quiz/$quizId/begin';
 }
 
