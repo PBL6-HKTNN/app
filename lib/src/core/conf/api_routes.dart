@@ -17,6 +17,7 @@ class ApiRoutes {
   static final _QuizRoutes QUIZ = _QuizRoutes._();
   static final _WishlistRoutes WISHLIST = _WishlistRoutes._();
   static final _EnrollmentRoutes ENROLLMENT = _EnrollmentRoutes._();
+  static final _CertificateRoutes CERTIFICATE = _CertificateRoutes._();
   static final _ReviewRoutes REVIEW = _ReviewRoutes._();
   static final _PaymentRoutes PAYMENT = _PaymentRoutes._();
 
@@ -153,6 +154,18 @@ class _EnrollmentRoutes {
       '${ApiRoutes.baseUrl}/Enrollment/lessons-completed/$enrollmentId';
   String isEnrolled(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
+}
+
+class _CertificateRoutes {
+  _CertificateRoutes._();
+
+  String generate(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/generate';
+  String myCertificates() => '${ApiRoutes.baseUrl}/Certificate/my';
+  String status(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/status';
+  String download(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/download';
 }
 
 class _ReviewRoutes {

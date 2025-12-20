@@ -1,5 +1,6 @@
 // Course Progress Tracking Exports
 
+export 'providers/certificate_provider.dart';
 // Providers
 export 'providers/course_progress_provider.dart';
 // Screens
