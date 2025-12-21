@@ -78,6 +78,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
         final theme = Theme.of(context);
         final authState = ref.watch(authStateProvider);
         final isGuest = !authState.isAuthenticated;
+        final isInstructor = authState.user?.role == 2;
         final thumbnail = course.thumbnail;
         final modules = content.modules;
 
@@ -326,12 +327,18 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
                       isPublished,
                       isGuest,
                       isInWishlist,
+                      isInstructor,
                     ),
 
                     const Gap(12),
 
                     // Wishlist button - only for published courses and non-enrolled users
-                    if (!isGuest && !isEnrolled && !isDraft && isPublished)
+                    // Hide wishlist for instructors as well
+                    if (!isGuest &&
+                        !isEnrolled &&
+                        !isDraft &&
+                        isPublished &&
+                        !isInstructor)
                       Button.secondary(
                         onPressed: () =>
                             _handleWishlistAction(context, ref, isInWishlist),
@@ -392,6 +399,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
     bool isPublished,
     bool isGuest,
     bool isInWishlist,
+    bool isInstructor,
   ) {
     // Enrolled users: show "Continue Learning" for published and archived courses
     if (isEnrolled && !isDraft) {
@@ -446,6 +454,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen>
 
     // Published course - non-enrolled users
     if (isPublished && !isEnrolled) {
+      // Don't show purchase UI to instructors
+      if (isInstructor) {
+        return const SizedBox.shrink();
+      }
+
       return AddToCartButton(
         courseId: widget.courseId,
         size: ButtonSize.normal,

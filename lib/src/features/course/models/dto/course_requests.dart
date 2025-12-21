@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 
 class CourseQueryParams {
   final String? categoryId;
+  final String? instructorId;
   final CourseLevel? level;
   final String? language;
   final String? sortBy;
@@ -11,6 +12,7 @@ class CourseQueryParams {
 
   const CourseQueryParams({
     this.categoryId,
+    this.instructorId,
     this.level,
     this.language,
     this.sortBy,
@@ -22,6 +24,9 @@ class CourseQueryParams {
     final params = <String, String>{};
     if (categoryId != null && categoryId!.isNotEmpty) {
       params['CategoryId'] = categoryId!;
+    }
+    if (instructorId != null && instructorId!.isNotEmpty) {
+      params['InstructorId'] = instructorId!;
     }
     if (level != null) {
       params['Level'] = level!.index.toString();

@@ -12,6 +12,7 @@ class VideoView extends ConsumerStatefulWidget {
   final String? lessonId;
   final void Function(double currentTime, double duration)? onProgressUpdate;
   final int? initialPositionMs;
+  final bool paused;
 
   const VideoView({
     super.key,
@@ -19,6 +20,7 @@ class VideoView extends ConsumerStatefulWidget {
     this.lessonId,
     this.onProgressUpdate,
     this.initialPositionMs,
+    this.paused = false,
   }) : assert(
          lesson != null || lessonId != null,
          'Either lesson or lessonId must be provided',
@@ -59,6 +61,17 @@ class _VideoViewState extends ConsumerState<VideoView> {
     if (oldWidget.lesson?.id != widget.lesson?.id ||
         oldWidget.lessonId != widget.lessonId) {
       _resetVideo();
+    }
+
+    // Pause/play based on parent control (e.g., quiz modal)
+    if (oldWidget.paused != widget.paused &&
+        _controller != null &&
+        _controller!.value.isInitialized) {
+      if (widget.paused) {
+        try {
+          _controller?.pause();
+        } catch (_) {}
+      }
     }
   }
 
@@ -168,9 +181,10 @@ class _VideoViewState extends ConsumerState<VideoView> {
     });
 
     if (widget.onProgressUpdate != null && total.inMilliseconds > 0) {
+      // Report progress in seconds (matching server and web behavior)
       widget.onProgressUpdate!(
-        position.inMilliseconds.toDouble(),
-        total.inMilliseconds.toDouble(),
+        position.inSeconds.toDouble(),
+        total.inSeconds.toDouble(),
       );
     }
   }

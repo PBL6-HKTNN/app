@@ -1,3 +1,4 @@
+import 'package:codemy_app/src/features/course/screens/instructor_course_screen.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/course_detail_learn_screen.dart';
@@ -38,6 +39,10 @@ class CourseRoutes {
         final source = state.uri.queryParameters['source'] ?? 'all';
         return CourseDetailScreen(courseId: courseId, source: source);
       },
+    ),
+    GoRoute(
+      path: '/instructor/courses',
+      builder: (context, state) => const InstructorCourseScreen(),
     ),
     GoRoute(
       path: '/course/:courseId/reviews',

@@ -3,6 +3,7 @@ import 'package:codemy_app/src/core/networks/api_client.dart';
 import 'package:codemy_app/src/core/networks/models/api_res.dart';
 import 'package:codemy_app/src/core/utils/logger.dart';
 import 'package:codemy_app/src/features/course/models/dto/lesson_requests.dart';
+import 'package:codemy_app/src/features/course/models/dto/lesson_responses.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 
 class LessonService {
@@ -134,6 +135,30 @@ class LessonService {
         error: error,
       );
       return ApiRes<Lesson>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Future<ApiRes<QuizInVideoResponse>> checkLessonVideo(String lessonId) async {
+    try {
+      final response = await _apiClient.get(
+        ApiRoutes.LESSON.checkLessonVideo(lessonId),
+      );
+      return ApiRes<QuizInVideoResponse>.fromJson(
+        response,
+        (data) => QuizInVideoResponse.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error(
+        'Failed to check lesson video quiz',
+        tag: 'LESSON',
+        error: error,
+      );
+      return ApiRes<QuizInVideoResponse>(
         status: 500,
         data: null,
         error: error,

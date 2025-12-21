@@ -154,4 +154,28 @@ class QuizService {
       );
     }
   }
+
+  Future<ApiRes<Map<String, dynamic>>> submitQuizInVideo(
+    String videoCheckpointId,
+    String answer,
+  ) async {
+    try {
+      final response = await _apiClient.post(
+        ApiRoutes.QUIZ.submitQuizInVideo(),
+        body: {'videoCheckpointId': videoCheckpointId, 'answer': answer},
+      );
+      return ApiRes<Map<String, dynamic>>.fromJson(
+        response,
+        (data) => Map<String, dynamic>.from(data as Map<String, dynamic>),
+      );
+    } catch (error) {
+      Logger.error('Failed to submit quiz in video', tag: 'QUIZ', error: error);
+      return ApiRes<Map<String, dynamic>>(
+        status: 500,
+        data: null,
+        error: error,
+        isSuccess: false,
+      );
+    }
+  }
 }
