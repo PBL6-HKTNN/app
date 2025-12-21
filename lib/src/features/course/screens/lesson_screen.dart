@@ -1,4 +1,5 @@
 import 'package:codemy_app/src/features/course/enums/lesson_type.dart';
+import 'package:codemy_app/src/features/course/models/dto/lesson_responses.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 import 'package:codemy_app/src/features/course/providers/course_progress_provider.dart';
 import 'package:codemy_app/src/features/course/providers/enrollment_provider.dart';
@@ -8,6 +9,8 @@ import 'package:codemy_app/src/features/course/widgets/lesson_type/locked_view.d
 import 'package:codemy_app/src/features/course/widgets/lesson_type/md_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/quiz_view.dart';
 import 'package:codemy_app/src/features/course/widgets/lesson_type/video_view.dart';
+import 'package:codemy_app/src/features/course/widgets/quiz_type/quiz_in_vid_modal.dart';
+import 'package:flutter/material.dart' show Dialog;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -36,6 +39,38 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
   bool _askedResumeDialog = false;
   int? _resumePositionMs;
   int? _lastSentWatchedMs;
+  bool _isQuizModalOpen = false;
+  bool _quizAnswered = false;
+  final Set<String> _answeredQuizIds = {};
+
+  void _openQuizModal(QuizInVideoResponse quiz) async {
+    // Show modal and handle submission callback
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          child: QuizInVideoModal(
+            quiz: quiz,
+            onSuccess: () {
+              setState(() {
+                _quizAnswered = true;
+                _answeredQuizIds.add(quiz.id);
+                _isQuizModalOpen = false;
+              });
+            },
+          ),
+        ),
+      );
+      // If user closed dialog without success, allow retry next time
+      if (!_quizAnswered) {
+        setState(() {
+          _isQuizModalOpen = false;
+        });
+      }
+    }
+  }
+
   String _formatTime(int seconds) {
     final dur = Duration(seconds: seconds);
     final h = dur.inHours;
@@ -304,36 +339,48 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               )
             : MdView(lessonId: widget.lessonId);
       case LessonType.video:
+        final quizAsync = ref.watch(checkLessonVideoProvider(widget.lessonId));
         return VideoView(
           lesson: lesson,
+          onProgressUpdate: (currentTime, duration) {
+            // Report progress to course progress provider (seconds)
+            if (_enrollmentId != null) {
+              ref
+                  .read(courseProgressProvider.notifier)
+                  .trackVideoProgress(
+                    currentTime,
+                    duration,
+                    widget.courseId,
+                    lesson.id,
+                    _enrollmentId!,
+                  );
+            }
+
+            // Trigger quiz modal when the timestamp is reached
+            final q = quizAsync.asData?.value;
+            if (q != null && !_quizAnswered && !_isQuizModalOpen) {
+              // parse timespan e.g. 00:01:23 -> seconds
+              final parts = q.time.split(':').map(int.tryParse).toList();
+              int seconds = 0;
+              if (parts.length == 3) {
+                seconds =
+                    (parts[0] ?? 0) * 3600 +
+                    (parts[1] ?? 0) * 60 +
+                    (parts[2] ?? 0);
+              } else if (parts.length == 2) {
+                seconds = (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
+              }
+              if ((currentTime - seconds).abs() < 1.0) {
+                setState(() {
+                  _isQuizModalOpen = true;
+                });
+                // pause video by setting flag (VideoView will respect it)
+                _openQuizModal(q);
+              }
+            }
+          },
           initialPositionMs: _resumePositionMs,
-          onProgressUpdate: enrollmentId != null
-              ? (currentTime, duration) {
-                  // Track video progress
-                  ref
-                      .read(courseProgressProvider.notifier)
-                      .trackVideoProgress(
-                        currentTime,
-                        duration,
-                        widget.courseId,
-                        widget.lessonId,
-                        enrollmentId,
-                      );
-                  // Send updateCurrentView with watchedSeconds every 15s
-                  final ms = currentTime.round();
-                  if (_lastSentWatchedMs == null ||
-                      (ms - _lastSentWatchedMs!).abs() >= 15000) {
-                    _lastSentWatchedMs = ms;
-                    final secondsToSend = (ms ~/ 1000);
-                    updateCurrentView(
-                      widget.courseId,
-                      widget.lessonId,
-                      enrollmentId,
-                      secondsToSend,
-                    );
-                  }
-                }
-              : null,
+          paused: _isQuizModalOpen,
         );
       case LessonType.quiz:
         return QuizView(

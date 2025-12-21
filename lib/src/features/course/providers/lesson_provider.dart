@@ -1,5 +1,6 @@
 import 'package:codemy_app/src/core/networks/exception.dart';
 import 'package:codemy_app/src/features/course/models/dto/lesson_requests.dart';
+import 'package:codemy_app/src/features/course/models/dto/lesson_responses.dart';
 import 'package:codemy_app/src/features/course/models/entities/lesson.dart';
 import 'package:codemy_app/src/features/course/services/lesson_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,5 +86,12 @@ final checkLessonLockedProvider = FutureProvider.autoDispose
     .family<Lesson?, String>((ref, lessonId) async {
       final service = ref.read(lessonServiceProvider);
       final response = await service.checkLessonLocked(lessonId);
+      return response.isSuccess ? response.data : null;
+    });
+
+final checkLessonVideoProvider = FutureProvider.autoDispose
+    .family<QuizInVideoResponse?, String>((ref, lessonId) async {
+      final service = ref.read(lessonServiceProvider);
+      final response = await service.checkLessonVideo(lessonId);
       return response.isSuccess ? response.data : null;
     });

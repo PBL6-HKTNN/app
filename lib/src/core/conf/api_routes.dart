@@ -17,6 +17,7 @@ class ApiRoutes {
   static final _QuizRoutes QUIZ = _QuizRoutes._();
   static final _WishlistRoutes WISHLIST = _WishlistRoutes._();
   static final _EnrollmentRoutes ENROLLMENT = _EnrollmentRoutes._();
+  static final _CertificateRoutes CERTIFICATE = _CertificateRoutes._();
   static final _ReviewRoutes REVIEW = _ReviewRoutes._();
   static final _PaymentRoutes PAYMENT = _PaymentRoutes._();
 
@@ -100,6 +101,8 @@ class _LessonRoutes {
   String delete(String lessonId) => '${ApiRoutes.baseUrl}/Lesson/$lessonId';
   String checkLocked(String lessonId) =>
       '${ApiRoutes.baseUrl}/Lesson/check-locked/$lessonId';
+  String checkLessonVideo(String lessonId) =>
+      '${ApiRoutes.baseUrl}/Lesson/$lessonId/video-checkpoint';
 }
 
 class _CategoryRoutes {
@@ -125,6 +128,9 @@ class _QuizRoutes {
   String delete(String quizId) => '${ApiRoutes.baseUrl}/Quiz/$quizId';
   String results(String lessonId) =>
       '${ApiRoutes.baseUrl}/Quiz/results/$lessonId';
+  String createQuizInVideo() => '${ApiRoutes.baseUrl}/Quiz/create-quiz';
+  String submitQuizInVideo() =>
+      '${ApiRoutes.baseUrl}/Quiz/submit/quiz-in-video';
   String begin(String quizId) => '${ApiRoutes.baseUrl}/Quiz/$quizId/begin';
 }
 
@@ -153,6 +159,18 @@ class _EnrollmentRoutes {
       '${ApiRoutes.baseUrl}/Enrollment/lessons-completed/$enrollmentId';
   String isEnrolled(String courseId) =>
       '${ApiRoutes.baseUrl}/Enrollment/is-enrolled/$courseId';
+}
+
+class _CertificateRoutes {
+  _CertificateRoutes._();
+
+  String generate(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/generate';
+  String myCertificates() => '${ApiRoutes.baseUrl}/Certificate/my';
+  String status(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/status';
+  String download(String enrollmentId) =>
+      '${ApiRoutes.baseUrl}/Certificate/$enrollmentId/download';
 }
 
 class _ReviewRoutes {

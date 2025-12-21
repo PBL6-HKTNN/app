@@ -1,17 +1,22 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../payment/widgets/add_to_cart_button.dart';
+import '../../user/providers/auth_providers.dart';
 import '../models/entities/course.dart';
 import '../models/entities/module.dart';
 
-class CourseCard extends StatelessWidget {
+class CourseCard extends ConsumerWidget {
   final Course course;
   final bool isJoined;
   const CourseCard({super.key, required this.course, this.isJoined = false});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+    final isInstructorViewer = authState.user?.role == 2;
+
     final modules = course.modules ?? <Module>[];
     final moduleCount = modules.isEmpty
         ? course.numberOfModules
@@ -139,7 +144,8 @@ class CourseCard extends StatelessWidget {
                       },
                       child: const Text('Learn'),
                     )
-                  else
+                  else if (!isInstructorViewer)
+                    // Show purchase UI only when the current viewer is NOT an instructor
                     AddToCartButton(
                       courseId: course.id,
                       size: ButtonSize.small,
